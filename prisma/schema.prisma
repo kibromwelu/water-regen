@@ -17,7 +17,7 @@ datasource db {
 model User {
   id           String     @id @default(uuid())
   phoneNumber  String     @unique
-  userName     String?    @unique
+  username     String?    @unique
   password     String?
   //aggrement    String[]
   status       UserStatus @default(PENDING)
@@ -25,8 +25,9 @@ model User {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime?  @updatedAt
 
-  socialAccount SocialAccount[]
-  refreshToken  refreshToken?
+  socialAccount         SocialAccount[]
+  refreshToken          refreshToken?
+  passwordChangeRequest PasswordChangeRequest[]
 }
 
 model SocialAccount {
@@ -49,15 +50,24 @@ model refreshToken {
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
 
-  userId String? @unique
-  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordChangeRequest {
+  id        String    @id @default(uuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationCode {
   id          String    @id @default(uuid())
   phoneNumber String    @unique
   code        String
-  expiresAt   DateTime?
+  expiresAt   DateTime
   createdAt   DateTime  @default(now())
   updatedAt   DateTime? @updatedAt
 }
