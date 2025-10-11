@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  //output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String     @id @default(uuid())
+  phoneNumber  String     @unique
+  userName     String?    @unique
+  password     String?
+  //aggrement    String[]
+  status       UserStatus @default(PENDING)
+  registeredAt DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime?  @updatedAt
+
+  socialAccount SocialAccount[]
+  refreshToken  refreshToken?
+}
+
+model SocialAccount {
+  id         String                @id @default(uuid())
+  provider   SocialAccountProvider
+  providerId String
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime?             @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+}
+
+model refreshToken {
+  id        String    @id @default(uuid())
+  token     String
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationCode {
+  id          String    @id @default(uuid())
+  phoneNumber String    @unique
+  code        String
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime? @updatedAt
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+}
+
+enum SocialAccountProvider {
+  NAVER
+  KAKAO
+  GOOGLE
+  APPLE
+}
