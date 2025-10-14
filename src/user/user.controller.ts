@@ -15,8 +15,8 @@ import { GetProfileResponse, VerifyPasswordChangeResponse } from './response';
 import { CurrentUserId } from 'src/common/decorators';
 import { JwtGuard } from 'src/common/guards';
 import {
-  changePasswordDto,
-  sendVerficationCodeDto,
+  ChangePasswordDto,
+  SendVerficationCodeDto,
   VerifyVerifcationCodeDto,
 } from './dto';
 import { MessageResponse } from 'src/common/response';
@@ -42,7 +42,7 @@ export class UserController {
   @ApiResponse({ status: 200, type: MessageResponse })
   async sendVerficationCode(
     @CurrentUserId() userId: string,
-    @Body() dto: sendVerficationCodeDto,
+    @Body() dto: SendVerficationCodeDto,
   ): Promise<MessageResponse> {
     return this.userService.sendVerficationCode(userId, dto);
   }
@@ -75,7 +75,7 @@ export class UserController {
   @ApiResponse({ status: 200, type: MessageResponse })
   async changePassword(
     @CurrentUserId() userId: string,
-    @Body() dto: changePasswordDto,
+    @Body() dto: ChangePasswordDto,
   ): Promise<MessageResponse> {
     return this.userService.changePassword(userId, dto);
   }

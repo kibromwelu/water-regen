@@ -10,8 +10,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { MessageResponse } from 'src/common/response';
 import {
-  changePasswordDto,
-  sendVerficationCodeDto,
+  ChangePasswordDto,
+  SendVerficationCodeDto,
   VerifyVerifcationCodeDto,
 } from './dto';
 import { GetProfileResponse, VerifyPasswordChangeResponse } from './response';
@@ -65,7 +65,7 @@ export class UserService {
 
   async sendVerficationCode(
     userId: string,
-    { phoneNumber, type }: sendVerficationCodeDto,
+    { phoneNumber, type }: SendVerficationCodeDto,
   ): Promise<MessageResponse> {
     try {
       const existingUser = await this.prisma.user.findUnique({
@@ -217,7 +217,7 @@ export class UserService {
 
   async changePassword(
     userId: string,
-    { token, password }: changePasswordDto,
+    { token, password }: ChangePasswordDto,
   ): Promise<MessageResponse> {
     try {
       const existingRequest = await this.prisma.passwordChangeRequest.findFirst(
@@ -226,6 +226,16 @@ export class UserService {
         },
       );
       if (!existingRequest) {
+        throw new BadRequestException('Invalid or expired token');
+      }
+
+      // check token expiry (1 hour)
+      const oneHour = 60 * 60 * 1000;
+      if (existingRequest.createdAt.getTime() + oneHour < Date.now()) {
+        // delete expired token
+        await this.prisma.passwordChangeRequest.delete({
+          where: { id: existingRequest.id },
+        });
         throw new BadRequestException('Invalid or expired token');
       }
 

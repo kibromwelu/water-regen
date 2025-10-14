@@ -97,7 +97,7 @@ model HusbandryData {
   id               String    @id @default(uuid())
   date             DateTime  @unique
   cleaningStatus   Boolean?
-  WaterTemperature Float?
+  waterTemperature Float?
   do               Float?
   ph               Float?
   nh4              Float?

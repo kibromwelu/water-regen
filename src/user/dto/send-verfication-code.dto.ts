@@ -6,7 +6,7 @@ enum VerificationType {
     CHANGE_PASSWORD = 'CHANGE_PASSWORD'
 }
 
-export class sendVerficationCodeDto {
+export class SendVerficationCodeDto {
     @ApiProperty()
     @IsString()
     phoneNumber: string

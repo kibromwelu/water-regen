@@ -8,6 +8,7 @@ import { UserModule } from './user/user.module';
 import { CronModule } from './cron/cron.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SmsModule } from './sms/sms.module';
+import { TankModule } from './tank/tank.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SmsModule } from './sms/sms.module';
     ScheduleModule.forRoot(),
     CronModule,
     SmsModule,
+    TankModule,
   ],
   controllers: [AppController],
   providers: [AppService],
