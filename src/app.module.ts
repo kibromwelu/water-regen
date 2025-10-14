@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { CronModule } from './cron/cron.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { SmsModule } from './sms/sms.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     UserModule,
     ScheduleModule.forRoot(),
     CronModule,
+    SmsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

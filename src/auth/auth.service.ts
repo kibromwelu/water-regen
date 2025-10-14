@@ -9,16 +9,16 @@ import { ConfigService } from '@nestjs/config';
 import { changeExpireInToMillisecond } from 'src/common/utils';
 import { JwtService } from '@nestjs/jwt';
 import axios from 'axios';
+import { SmsService } from 'src/sms/sms.service';
 
 @Injectable()
 export class AuthService {
-
 
     constructor(
         private readonly prisma: PrismaService,
         private readonly config: ConfigService,
         private readonly jwt: JwtService,
-
+        private readonly smsService: SmsService,
     ) { }
 
     async verifyPhone(dto: VerifyPhoneDto): Promise<MessageResponse> {
@@ -40,6 +40,8 @@ export class AuthService {
             });
 
             // TODO: Send SMS with the code
+            //const sms = await this.smsService.sendOtpSms(dto.phoneNumber, code)
+
             console.log('Verification code:', verificationRecord.code);
             return { message: 'Verification code sent' };
 

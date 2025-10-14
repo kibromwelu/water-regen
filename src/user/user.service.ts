@@ -16,10 +16,14 @@ import {
 } from './dto';
 import { GetProfileResponse, VerifyPasswordChangeResponse } from './response';
 import axios from 'axios';
+import { SmsService } from 'src/sms/sms.service';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly smsService: SmsService,
+  ) {}
 
   async getUserProfile(userId: string): Promise<GetProfileResponse> {
     try {
@@ -108,6 +112,7 @@ export class UserService {
       });
 
       // TODO: send SMS
+      //const sms = await this.smsService.sendOtpSms(phoneNumber, code)
 
       return {
         message: 'Verification code sent',
