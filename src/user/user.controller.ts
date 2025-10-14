@@ -1,77 +1,159 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { GetProfileResponse, VerifyPasswordChangeResponse } from './response';
 import { CurrentUserId } from 'src/common/decorators';
 import { JwtGuard } from 'src/common/guards';
-import { changePasswordDto, sendVerficationCodeDto, VerifyVerifcationCodeDto } from './dto';
+import {
+  changePasswordDto,
+  sendVerficationCodeDto,
+  VerifyVerifcationCodeDto,
+} from './dto';
 import { MessageResponse } from 'src/common/response';
 
 @ApiBearerAuth()
 @UseGuards(JwtGuard)
 @Controller('user')
 export class UserController {
-    constructor(private readonly UserService: UserService) {}
+  constructor(private readonly userService: UserService) {}
 
-    @Get('my-profile')
-    @ApiOperation({ summary: 'Get user profile' })
-    @ApiResponse({ status: 200, type: GetProfileResponse })
-    async getUserProfile(
-        @CurrentUserId() userId: string,
-    ): Promise<GetProfileResponse> {
-        return this.UserService.getUserProfile(userId);
-    }
+  @Get('my-profile')
+  @ApiOperation({ summary: 'Get user profile' })
+  @ApiResponse({ status: 200, type: GetProfileResponse })
+  async getUserProfile(
+    @CurrentUserId() userId: string,
+  ): Promise<GetProfileResponse> {
+    return this.userService.getUserProfile(userId);
+  }
 
-    @Post('send-verification-code')
-    @HttpCode(HttpStatus.OK)
-    @ApiOperation({ summary: 'Send verification code to phone number' })
-    @ApiResponse({ status: 200, type: MessageResponse })
-    async sendVerficationCode(
-      @CurrentUserId() userId: string,
-      @Body() dto: sendVerficationCodeDto,
-    ): Promise<MessageResponse> {
-      return this.UserService.sendVerficationCode(userId, dto);
-    }
+  @Post('send-verification-code')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send verification code to phone number' })
+  @ApiResponse({ status: 200, type: MessageResponse })
+  async sendVerficationCode(
+    @CurrentUserId() userId: string,
+    @Body() dto: sendVerficationCodeDto,
+  ): Promise<MessageResponse> {
+    return this.userService.sendVerficationCode(userId, dto);
+  }
 
-    @Post('change-phone-number')
-    @HttpCode(HttpStatus.OK)
-    @ApiOperation({ summary: 'Change phone number (verify code and update)' })
-    @ApiResponse({ status: 200, type: MessageResponse })
-    async changePhoneNumber(
-      @CurrentUserId() userId: string,
-      @Body() dto: VerifyVerifcationCodeDto,
-    ): Promise<MessageResponse> {
-      return this.UserService.changePhoneNumber(userId, dto);
-    }
+  @Post('change-phone-number')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change phone number (verify code and update)' })
+  @ApiResponse({ status: 200, type: MessageResponse })
+  async changePhoneNumber(
+    @CurrentUserId() userId: string,
+    @Body() dto: VerifyVerifcationCodeDto,
+  ): Promise<MessageResponse> {
+    return this.userService.changePhoneNumber(userId, dto);
+  }
 
-    @Post('verify-password-change')
-    @HttpCode(HttpStatus.OK)
-    @ApiOperation({ summary: 'Verify password change request (returns token)' })
-    @ApiResponse({ status: 200, type: VerifyPasswordChangeResponse })
-    async verifyPasswordChangeRequest(
-      @CurrentUserId() userId: string,
-      @Body() dto: VerifyVerifcationCodeDto,
-    ): Promise<VerifyPasswordChangeResponse> {
-      return this.UserService.verifyPasswordChangeRequest(userId, dto);
-    }
+  @Post('verify-password-change')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify password change request (returns token)' })
+  @ApiResponse({ status: 200, type: VerifyPasswordChangeResponse })
+  async verifyPasswordChangeRequest(
+    @CurrentUserId() userId: string,
+    @Body() dto: VerifyVerifcationCodeDto,
+  ): Promise<VerifyPasswordChangeResponse> {
+    return this.userService.verifyPasswordChangeRequest(userId, dto);
+  }
 
-    @Post('change-password')
-    @HttpCode(HttpStatus.OK)
-    @ApiOperation({ summary: 'Change password using token' })
-    @ApiResponse({ status: 200, type: MessageResponse })
-    async changePassword(
-      @CurrentUserId() userId: string,
-      @Body() dto: changePasswordDto,
-    ): Promise<MessageResponse> {
-      return this.UserService.changePassword(userId, dto);
-    }
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change password using token' })
+  @ApiResponse({ status: 200, type: MessageResponse })
+  async changePassword(
+    @CurrentUserId() userId: string,
+    @Body() dto: changePasswordDto,
+  ): Promise<MessageResponse> {
+    return this.userService.changePassword(userId, dto);
+  }
 
-    @Delete()
-    @ApiOperation({ summary: 'Delete current user account' })
-    @ApiResponse({ status: 200, type: MessageResponse })
-    async deleteUser(
-      @CurrentUserId() userId: string,
-    ): Promise<MessageResponse> {
-      return this.UserService.deleteUser(userId);
-    }
+  @Delete()
+  @ApiOperation({ summary: 'Delete current user account' })
+  @ApiResponse({ status: 200, type: MessageResponse })
+  async deleteUser(@CurrentUserId() userId: string): Promise<MessageResponse> {
+    return this.userService.deleteUser(userId);
+  }
+
+  @Post('/link-kakao')
+  @ApiOperation({
+    summary: 'Connect kakao account',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: MessageResponse,
+    description: 'Connected successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'unauthorized access',
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  async connectKakao(
+    @Query('Authorization') token: string,
+    @CurrentUserId() userId: string,
+  ) {
+    return await this.userService.linkKakao(token, userId);
+  }
+
+  @Post('link-naver')
+  @ApiOperation({
+    summary: 'Connect naver',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: MessageResponse,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized access',
+  })
+  async connectNaver(
+    @Query('Authorization') token: string,
+    @CurrentUserId() userId: string,
+  ) {
+    return this.userService.linkNaver(token, userId);
+  }
+
+  @Post('link-google')
+  @ApiOperation({
+    summary: 'Connect google',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: MessageResponse,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized access',
+  })
+  async linkGoogle(
+    @Query('Authorization') token: string,
+    @CurrentUserId() userId: string,
+  ) {
+    return this.userService.linkGoogle(token, userId);
+  }
 }

@@ -3,6 +3,8 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
@@ -13,6 +15,7 @@ import {
   VerifyVerifcationCodeDto,
 } from './dto';
 import { GetProfileResponse, VerifyPasswordChangeResponse } from './response';
+import axios from 'axios';
 
 @Injectable()
 export class UserService {
@@ -163,15 +166,13 @@ export class UserService {
     { phoneNumber, code }: VerifyVerifcationCodeDto,
   ): Promise<VerifyPasswordChangeResponse> {
     try {
-        const existingUser = await this.prisma.user.findUnique({
-          where: { id: userId, phoneNumber },
-        });
-        if (!existingUser) {
-          throw new BadRequestException(
-            'No user with this phone number',
-          );
-        }
-        
+      const existingUser = await this.prisma.user.findUnique({
+        where: { id: userId, phoneNumber },
+      });
+      if (!existingUser) {
+        throw new BadRequestException('No user with this phone number');
+      }
+
       const verification = await this.prisma.verificationCode.findUnique({
         where: { phoneNumber },
       });
@@ -271,6 +272,169 @@ export class UserService {
       // Handle any errors
       const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
       throw new HttpException(error.message, statusCode);
+    }
+  }
+
+  async linkKakao(token: string, userId: string) {
+    try {
+      const accessToken = token?.replace('Bearer ', '');
+      // console.log("Access token: ", accessToken);
+      if (!accessToken) {
+        throw new UnauthorizedException('Access token required');
+      }
+      let user = await this.prisma.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      const kakaoUser = await axios.get('https://kapi.kakao.com/v2/user/me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      // console.log("Kakao user: ", kakaoUser);
+      if (!kakaoUser) {
+        throw new NotFoundException("We couldn't verify your kakao account");
+      }
+
+      const { id } = kakaoUser.data;
+      // console.log(id);
+      let existingAccount = await this.prisma.socialAccount.findFirst({
+        where: { provider: 'KAKAO', providerId: id.toString() },
+      });
+      if (existingAccount && existingAccount.userId == userId) {
+        throw new BadRequestException(
+          'You have already connected kakao before!',
+        );
+      } else if (existingAccount && existingAccount.userId !== userId) {
+        throw new BadRequestException(
+          "Account is already linked with someone's account",
+        );
+      }
+      let account = await this.prisma.socialAccount.create({
+        data: {
+          providerId: id.toString(),
+          provider: 'KAKAO',
+          userId,
+        },
+      });
+      // console.log(account);
+      return {
+        message: 'You have successfully connected your kakao account!',
+      };
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error.message, error.status || 500);
+    }
+  }
+
+  async linkNaver(token: string, userId: string) {
+    try {
+      const accessToken = token?.replace('Bearer ', '');
+      // console.log(accessToken);
+      if (!accessToken) {
+        throw new UnauthorizedException('Access token required');
+      }
+      let localUser = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+      // console.log("local user: ", localUser);
+      if (!localUser) {
+        throw new NotFoundException('User not found');
+      }
+      const userResponse = await axios.get(
+        'https://openapi.naver.com/v1/nid/me',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+      const { response: user } = userResponse.data;
+      const id = user.id;
+      let existingAccount = await this.prisma.socialAccount.findFirst({
+        where: {
+          providerId: id,
+          provider: 'NAVER',
+        },
+        include: { user: true },
+      });
+      if (existingAccount && existingAccount.userId == userId) {
+        throw new BadRequestException(
+          'You have already connected Naver account before!',
+        );
+      } else if (existingAccount && existingAccount.userId !== userId) {
+        throw new BadRequestException(
+          "Account is already linked with someone's account",
+        );
+      }
+      await this.prisma.socialAccount.create({
+        data: {
+          providerId: id,
+          provider: 'NAVER',
+          userId,
+        },
+      });
+
+      return {
+        message: 'Naver account connected successfully',
+      };
+    } catch (error) {
+      // throw new UnauthorizedException('Invalid Naver token');
+      throw new HttpException(error.message, error.status || 500);
+    }
+  }
+
+  async linkGoogle(token: string, userId: string) {
+    try {
+      const accessToken = token?.replace('Bearer ', '');
+      if (!accessToken) {
+        throw new UnauthorizedException('Access token is required');
+      }
+
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // Verify token with Google
+      const googleResponse = await axios.get(
+        'https://www.googleapis.com/oauth2/v3/userinfo',
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        },
+      );
+      const { sub: providerId, email } = googleResponse.data;
+      if (!providerId) {
+        throw new UnauthorizedException('Invalid Google token');
+      }
+
+      const existingAccount = await this.prisma.socialAccount.findFirst({
+        where: { provider: 'GOOGLE', providerId },
+      });
+      if (existingAccount) {
+        if (existingAccount.userId === userId) {
+          throw new BadRequestException(
+            'Google account already linked to this user',
+          );
+        }
+        throw new BadRequestException(
+          'Google account is linked to another user',
+        );
+      }
+
+      await this.prisma.socialAccount.create({
+        data: {
+          providerId,
+          provider: 'GOOGLE',
+          userId,
+        },
+      });
+
+      return { message: 'Google account connected successfully' };
+    } catch (error) {
+      console.error('Google linking error:', error.message);
+      throw new HttpException(
+        error.response?.data?.error_description || error.message,
+        error.response?.status || 500,
+      );
     }
   }
 }
