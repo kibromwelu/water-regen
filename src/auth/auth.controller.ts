@@ -1,9 +1,9 @@
-import { Body, Controller, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { LoginDto, RefreshTokenDto, SignupDto, VerifyCodeDto, VerifyPhoneDto } from './dto';
+import { CheckUsernameDto, LoginDto, RefreshTokenDto, SignupDto, VerifyCodeDto, VerifyPhoneDto } from './dto';
 import { MessageResponse } from 'src/common/response';
-import { LoginResponse, VerifyCodeResponse } from './response';
+import { CheckUsernameResponse, LoginResponse, VerifyCodeResponse } from './response';
 
 @Controller('auth')
 export class AuthController {
@@ -24,6 +24,15 @@ export class AuthController {
     async verifyCode(@Body() body: VerifyCodeDto): Promise<VerifyCodeResponse> {
         return this.authService.verifyCode(body);
     }
+
+    @ApiOperation({ summary: 'Check username availability' })
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({ status: 200, type: CheckUsernameResponse })
+    @Post('check-username')
+    async checkUsername(@Body() body: CheckUsernameDto): Promise<CheckUsernameResponse> {
+        return this.authService.checkUsername(body);
+    }
+
 
     @ApiOperation({ summary: 'Signup user' })
     @HttpCode(HttpStatus.CREATED)
@@ -47,5 +56,25 @@ export class AuthController {
     @Post('refresh-token')
     async refreshToken(@Body() dto: RefreshTokenDto): Promise<LoginResponse> {
         return this.authService.refreshToken(dto);
+    }
+
+    @ApiOperation({ summary: 'Login with Kakao' })
+    @ApiResponse({ status: 200, type: LoginResponse })
+    @HttpCode(HttpStatus.OK)
+    @Post('login/kakao')
+    async loginWithKakao(
+        @Query('accessToken') accessToken: string
+    ): Promise<LoginResponse> {
+        return this.authService.loginWithKakao(accessToken);
+    }
+
+    @ApiOperation({ summary: 'Login with Naver' })
+    @ApiResponse({ status: 200, type: LoginResponse })
+    @HttpCode(HttpStatus.OK)
+    @Post('login/naver')
+    async loginWithNaver(
+        @Query('accessToken') accessToken: string
+    ): Promise<LoginResponse> {
+        return this.authService.loginWithNaver(accessToken);
     }
 }

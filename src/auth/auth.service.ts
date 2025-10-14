@@ -1,13 +1,14 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { LoginDto, RefreshTokenDto, SignupDto, VerifyCodeDto, VerifyPhoneDto } from './dto';
+import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { CheckUsernameDto, LoginDto, RefreshTokenDto, SignupDto, VerifyCodeDto, VerifyPhoneDto } from './dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MessageResponse } from 'src/common/response';
-import { LoginResponse, VerifyCodeResponse } from './response';
+import { CheckUsernameResponse, LoginResponse, VerifyCodeResponse } from './response';
 import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
 import { changeExpireInToMillisecond } from 'src/common/utils';
 import { JwtService } from '@nestjs/jwt';
+import axios from 'axios';
 
 @Injectable()
 export class AuthService {
@@ -76,6 +77,18 @@ export class AuthService {
 
             return { message: 'Phone number verified successfully', id: user.id };
 
+        } catch (error) {
+            throw new HttpException(error.message, error.status || 500);
+        }
+    }
+    async checkUsername(dto: CheckUsernameDto): Promise<CheckUsernameResponse> {
+        try {
+            let existingAccount = await this.prisma.user.findUnique({ where: { username: dto.username } });
+            if (existingAccount) {
+                return { available: false };
+            } else {
+                return { available: true };
+            }
         } catch (error) {
             throw new HttpException(error.message, error.status || 500);
         }
@@ -235,6 +248,103 @@ export class AuthService {
             // Handle any errors
             const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
             throw new HttpException(error.message, statusCode);
+        }
+    }
+
+    async loginWithKakao(kakaoToken: string): Promise<LoginResponse> {
+        try {
+            let token = { accessToken: '', refreshToken: '' };
+            const accessToken = kakaoToken?.replace('Bearer ', '');
+            if (!accessToken) {
+                throw new UnauthorizedException('Please provide kakao access token');
+            }
+            const kakaoUser = await axios.get('https://kapi.kakao.com/v2/user/me', {
+                headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            // console.log("Kakao user: ", kakaoUser);
+            if (!kakaoUser) {
+                throw new NotFoundException("We couldn't verify your kakao account");
+            }
+
+            const { id } = kakaoUser.data;
+            // console.log(id, typeof id);
+            let user = await this.prisma.user.findFirst({
+                where: {
+                    socialAccount: {
+                        some: {
+                            providerId: id.toString(),
+                            provider: 'KAKAO',
+                        },
+                    },
+                },
+            });
+            if (!user) {
+                throw new NotFoundException("You haven't connected your account");
+            } else {
+
+                if (user.status == 'ACTIVE') {
+                    token = await this.generateTokens(user.id)
+                }
+
+
+                return {
+                    accessToken: token.accessToken,
+                    refreshToken: token.refreshToken,
+                    id: user.id
+                };
+            }
+        } catch (error) {
+            console.log(error.message);
+            throw new HttpException(error.message, error.status || 500);
+        }
+    }
+
+    async loginWithNaver(naverToken: string): Promise<LoginResponse> {
+        try {
+            let token = { accessToken: '', refreshToken: '' };
+            const accessToken = naverToken?.replace('Bearer ', '');
+            // console.log(accessToken);
+            if (!accessToken) {
+                throw new UnauthorizedException('Access token required');
+            }
+            const userResponse = await axios.get(
+                'https://openapi.naver.com/v1/nid/me',
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                },
+            );
+            // console.log(userResponse);
+            if (!userResponse) {
+                throw new NotFoundException("We couldn't verify your naver account");
+            }
+            const { response: user } = userResponse.data;
+            const id = user.id;
+            console.log('User naver id: ', user.id, id);
+            let localUser = await this.prisma.user.findFirst({
+                where: {
+                    socialAccount: {
+                        some: {
+                            providerId: id,
+                            provider: 'NAVER',
+                        },
+                    },
+                },
+
+            });
+            if (!localUser) {
+                throw new NotFoundException("You haven't connected your account");
+            }
+            token = await this.generateTokens(localUser.id);
+            return {
+                accessToken: token.accessToken,
+                refreshToken: token.refreshToken,
+                id: localUser.id
+            };
+
+        } catch (error) {
+            throw new HttpException(error.message, error.status || 500);
         }
     }
 
