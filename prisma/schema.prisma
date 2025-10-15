@@ -83,19 +83,19 @@ model Tank {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime? @updatedAt
 
-  userId                 String
-  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  husbandryData          HusbandryData[]
-  conditions             Condition[]
-  recurringConditions    RecurringCondition[]
-  feedIncreaseConditions FeedIncreaseCondition[]
-  todos                  Todo[]
-  records                Record[]
+  userId                String
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  husbandryData         HusbandryData[]
+  conditions            Condition[]
+  recurringConditions   RecurringCondition[]
+  feedIncreaseCondition FeedIncreaseCondition?
+  todos                 Todo[]
+  records               Record[]
 }
 
 model HusbandryData {
   id               String    @id @default(uuid())
-  date             DateTime  @unique
+  date             DateTime
   cleaningStatus   Boolean?
   waterTemperature Float?
   do               Float?
@@ -111,12 +111,14 @@ model HusbandryData {
   tank             Tank               @relation(fields: [tankId], references: [id], onDelete: Cascade)
   feedingData      FeedingData[]
   supplementDosing SupplementDosing[]
+
+  @@unique([tankId, date])
 }
 
 model FeedingData {
   id        String    @id @default(uuid())
-  type      String?
-  amount    Float?
+  type      String
+  amount    Float     @default(0)
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
 
@@ -126,8 +128,8 @@ model FeedingData {
 
 model SupplementDosing {
   id        String    @id @default(uuid())
-  name      String?
-  dosage    Float?
+  name      String
+  dosage    Float
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
 
@@ -174,12 +176,12 @@ model FeedIncreaseCondition {
   referenceTime         String
   dailyMessageSentCount Int
   lastMessageSent       DateTime?
-  lastFeedAmount        Float     @default(0)
+  expectedFeedAmount    Float     @default(0)
   totalMessageSent      Int
   createdAt             DateTime  @default(now())
   updatedAt             DateTime? @updatedAt
 
-  tankId String
+  tankId String @unique
   tank   Tank   @relation(fields: [tankId], references: [id], onDelete: Cascade)
 }
 
