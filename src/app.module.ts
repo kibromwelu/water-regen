@@ -11,6 +11,7 @@ import { SmsModule } from './sms/sms.module';
 import { TankModule } from './tank/tank.module';
 import { ConditionModule } from './condition/condition.module';
 import { FeedIncreaseConditionModule } from './feed-increase-condition/feed-increase-condition.module';
+import { RecurringConditionModule } from './recurring-condition/recurring-condition.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { FeedIncreaseConditionModule } from './feed-increase-condition/feed-incr
     TankModule,
     ConditionModule,
     FeedIncreaseConditionModule,
+    RecurringConditionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
