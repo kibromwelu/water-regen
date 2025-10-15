@@ -83,9 +83,9 @@ model Tank {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime? @updatedAt
 
-  userId                String
-  user                  User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  husbandryData         HusbandryData[]
+  userId                 String
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  husbandryData          HusbandryData[]
   conditions             Condition[]
   recurringConditions    RecurringCondition[]
   feedIncreaseConditions FeedIncreaseCondition[]
@@ -141,7 +141,7 @@ model Condition {
   sensor         SensorType
   value          Float
   condition      ConditionValueType
-  recommendation String
+  recommendation String?
   message        String
   type           ConditionType
   createdAt      DateTime           @default(now())

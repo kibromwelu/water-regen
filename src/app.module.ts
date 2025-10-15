@@ -9,6 +9,8 @@ import { CronModule } from './cron/cron.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SmsModule } from './sms/sms.module';
 import { TankModule } from './tank/tank.module';
+import { ConditionModule } from './condition/condition.module';
+import { FeedIncreaseConditionModule } from './feed-increase-condition/feed-increase-condition.module';
 
 @Module({
   imports: [
@@ -20,8 +22,10 @@ import { TankModule } from './tank/tank.module';
     CronModule,
     SmsModule,
     TankModule,
+    ConditionModule,
+    FeedIncreaseConditionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
