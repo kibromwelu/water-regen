@@ -9,14 +9,14 @@ export class UpdateFeedingConditionDto {
     @ApiProperty()
     @IsString()
     tankId: string;
-    @ApiProperty()
-    @IsEnum({ enum: SensorType })
+    @ApiProperty({ enum: SensorType })
+    @IsEnum(SensorType)
     sensor: SensorType;
     @ApiProperty()
     @IsNumber()
     value: number;
-    @ApiProperty()
-    @IsEnum({ enum: ConditionValueType })
+    @ApiProperty({ enum: ConditionValueType })
+    @IsEnum(ConditionValueType)
     condition: ConditionValueType;
     @ApiProperty()
     @IsString()

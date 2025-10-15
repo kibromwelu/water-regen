@@ -156,7 +156,7 @@ export class FeedIncreaseConditionService {
                 },
             });
 
-            return { message: 'Feed increase condition created successfully' };
+            return { message: 'Feed increase condition updated successfully' };
         } catch (error) {
             throw new HttpException(error.message, error.status || 500);
         }
