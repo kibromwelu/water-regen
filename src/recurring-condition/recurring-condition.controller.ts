@@ -1,0 +1,77 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { RecurringConditionService } from './recurring-condition.service';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { GetRecurringConditionDetailResponse } from './response';
+import { CurrentUserId } from 'src/common/decorators';
+import { MessageResponse } from 'src/common/response';
+import {
+  CreateRecurringConditionDto,
+  UpdateRecurringConditionDto,
+} from './dto';
+import { JwtGuard } from 'src/common/guards';
+
+@ApiBearerAuth()
+@UseGuards(JwtGuard)
+@Controller('recurring-condition')
+export class RecurringConditionController {
+  constructor(
+    private readonly recurringConditionService: RecurringConditionService,
+  ) {}
+
+  @Get('detail/:id')
+  @ApiOperation({ summary: 'Get recurring condition detail info' })
+  @ApiResponse({ status: 200, type: GetRecurringConditionDetailResponse })
+  async getDetailRecurringCondition(
+    @CurrentUserId() userId: string,
+    @Param('id') id: string,
+  ): Promise<GetRecurringConditionDetailResponse> {
+    return this.recurringConditionService.getDetailRecurringCondition(
+      userId,
+      id,
+    );
+  }
+
+  @Post('create')
+  @ApiOperation({ summary: 'create recurring condition info' })
+  @ApiResponse({ status: 201, type: MessageResponse })
+  async createRecurringCondition(
+    @CurrentUserId() userId: string,
+    @Body() dto: CreateRecurringConditionDto,
+  ): Promise<MessageResponse> {
+    return this.recurringConditionService.createRecurringCondition(userId, dto);
+  }
+
+  @Patch('update/:id')
+  @ApiOperation({ summary: 'update recurring condition info' })
+  @ApiResponse({ status: 200, type: MessageResponse })
+  async updateRecurringCondition(
+    @CurrentUserId() userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateRecurringConditionDto,
+  ): Promise<MessageResponse> {
+    return this.recurringConditionService.updateRecurringCondition(
+      userId,
+      id,
+      dto,
+    );
+  }
+
+  @Delete('delete/:id')
+  @ApiOperation({ summary: 'delete recurring condition' })
+  @ApiResponse({ status: 200, type: MessageResponse })
+  async deleteRecurringCondition(
+    @CurrentUserId() userId: string,
+    @Param('id') id: string,
+  ): Promise<MessageResponse> {
+    return this.recurringConditionService.deleteRecurringCondition(userId, id);
+  }
+}

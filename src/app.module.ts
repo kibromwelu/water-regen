@@ -9,6 +9,7 @@ import { CronModule } from './cron/cron.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SmsModule } from './sms/sms.module';
 import { TankModule } from './tank/tank.module';
+import { RecurringConditionModule } from './recurring-condition/recurring-condition.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { TankModule } from './tank/tank.module';
     CronModule,
     SmsModule,
     TankModule,
+    RecurringConditionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
