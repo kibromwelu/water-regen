@@ -3,6 +3,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTankDto, UpdateTankDto } from './dto';
@@ -25,6 +26,7 @@ export class TankService {
           whitelegShrimpStrain: dto.whitelegShrimpStrain,
           averageBodyWeight: dto.averageBodyWeight,
           numberStocked: dto.numberStocked,
+          salinity: dto.salinity || undefined,
           husbandryData: {
             create: {
               date: new Date(),
@@ -61,19 +63,10 @@ export class TankService {
           id: id,
           userId: userId,
         },
-        include: {
-          husbandryData: {
-            orderBy: { createdAt: 'asc' },
-            take: 1,
-          },
-        },
       });
 
       if (!existingTank) {
-        throw {
-          message: 'Tank not found',
-          status: 404,
-        };
+         throw new NotFoundException('Tank not found');
       }
 
       // Proceed with the update if the tank exists and belongs to the user
@@ -84,20 +77,7 @@ export class TankService {
           whitelegShrimpStrain: dto.whitelegShrimpStrain || undefined,
           averageBodyWeight: dto.averageBodyWeight || undefined,
           numberStocked: dto.numberStocked || undefined,
-          husbandryData: {
-            update: {
-              where: { id: existingTank.husbandryData[0].id },
-              data: {
-                waterTemperature: dto.waterTemperature || undefined,
-                do: dto.do || undefined,
-                ph: dto.ph || undefined,
-                nh4: dto.nh4 || undefined,
-                no2: dto.no2 || undefined,
-                alk: dto.alk || undefined,
-                salinity: dto.salinity || undefined,
-              },
-            },
-          },
+          salinity: dto.salinity || undefined,
         },
       });
 
@@ -143,19 +123,10 @@ export class TankService {
           id: id,
           userId: userId,
         },
-        include: {
-          husbandryData: {
-            orderBy: { createdAt: 'asc' },
-            take: 1,
-          },
-        },
       });
 
       if (!existingTank) {
-        throw {
-          message: 'Tank not found',
-          status: 404,
-        };
+        throw new NotFoundException('Tank not found');
       }
 
       return {
@@ -164,14 +135,7 @@ export class TankService {
         whitelegShrimpStrain: existingTank.whitelegShrimpStrain,
         averageBodyWeight: existingTank.averageBodyWeight,
         numberStocked: existingTank.numberStocked,
-        do: existingTank.husbandryData?.[0]?.do || null,
-        ph: existingTank.husbandryData?.[0]?.ph || null,
-        nh4: existingTank.husbandryData?.[0]?.nh4 || null,
-        no2: existingTank.husbandryData?.[0]?.no2 || null,
-        alk: existingTank.husbandryData?.[0]?.alk || null,
-        salinity: existingTank.husbandryData?.[0]?.salinity || null,
-        waterTemperature:
-          existingTank.husbandryData?.[0]?.waterTemperature || null,
+        salinity: existingTank.salinity
       };
     } catch (error) {
       // Handle any errors

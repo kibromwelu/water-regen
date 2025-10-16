@@ -79,6 +79,7 @@ model Tank {
   name                 String
   whitelegShrimpStrain String
   averageBodyWeight    Float
+  salinity         Float?
   numberStocked        Int
   createdAt            DateTime  @default(now())
   updatedAt            DateTime? @updatedAt
@@ -96,7 +97,7 @@ model Tank {
 model HusbandryData {
   id               String    @id @default(uuid())
   date             DateTime
-  cleaningStatus   Boolean?
+  isClean   Boolean?
   waterTemperature Float?
   do               Float?
   ph               Float?

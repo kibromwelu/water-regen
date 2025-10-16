@@ -1,5 +1,29 @@
-//import { PartialType } from '@nestjs/mapped-types';
-import { CreateTankDto } from './create-tank.dto';
-import { PartialType } from '@nestjs/swagger';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export class UpdateTankDto extends PartialType(CreateTankDto) {}
+export class UpdateTankDto {
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  name: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  whitelegShrimpStrain: string;
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  averageBodyWeight: number;
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  numberStocked: number;
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  salinity?: number;
+}
