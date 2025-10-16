@@ -26,10 +26,9 @@ export class CreateRecurringConditionDto {
     intervalType: IntervalType
 
     @ApiPropertyOptional()
-    @Type(() => Date)
-    @IsDate()
+    @IsString()
     @IsOptional()
-    endDate?: Date
+    endDate?: string
 
     @ApiPropertyOptional()
     @IsNumber()

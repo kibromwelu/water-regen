@@ -12,6 +12,7 @@ import { TankModule } from './tank/tank.module';
 import { ConditionModule } from './condition/condition.module';
 import { FeedIncreaseConditionModule } from './feed-increase-condition/feed-increase-condition.module';
 import { RecurringConditionModule } from './recurring-condition/recurring-condition.module';
+import { HomeModule } from './home/home.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { RecurringConditionModule } from './recurring-condition/recurring-condit
     ConditionModule,
     FeedIncreaseConditionModule,
     RecurringConditionModule,
+    HomeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

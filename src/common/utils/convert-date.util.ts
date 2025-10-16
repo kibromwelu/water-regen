@@ -22,6 +22,19 @@ export function koreaToUtc(dateStr: string, timeStr?: string): string {
     } else if (/^\d{1,2}:\d{1,2}$/.test(timeStr)) {
       const [h, m] = timeStr.split(':');
       normalizedTime = `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
+    }else if (/^\d{1,2}:\d{1,2}:\d{1,2}(\.\d{3})?$/.test(timeStr)) {
+      // Validate and normalize HH:MM:SS[.mmm]
+      const [time, ms] = timeStr.split('.'); // Split milliseconds if present
+      const [h, m, s] = time.split(':');
+      // Pad to two digits
+      const hours = h.padStart(2, '0');
+      const minutes = m.padStart(2, '0');
+      const seconds = s.padStart(2, '0');
+      // Validate ranges (optional)
+      if (+hours > 23 || +minutes > 59 || +seconds > 59) {
+        throw new Error('Invalid time values');
+      }
+      normalizedTime = `${hours}:${minutes}:${seconds}${ms ? '.' + ms : ''}`;
     } else {
       throw new Error('Invalid time format');
     }
@@ -42,21 +55,24 @@ export function utcToKorea(utcIsoStr: string): string {
 
 //Get the hour (0–23) from a Korea time string.
 export function getKoreaHour(koreaDateStr: string): number {
-  const normalized = koreaDateStr.replace(/\./g, '-');
+  // Remove timezone info
+  const normalized = koreaDateStr.replace(/\./g, '-').replace(/\+09:00$/, '');
   const kst = dayjs.tz(normalized, KST);
   return kst.hour();
 }
 
 //Get the day of month (1–31) from a Korea time string.
 export function getKoreaDay(koreaDateStr: string): number {
-  const normalized = koreaDateStr.replace(/\./g, '-');
+  // Remove timezone info
+  const normalized = koreaDateStr.replace(/\./g, '-').replace(/\+09:00$/, '');
   const kst = dayjs.tz(normalized, KST);
   return kst.date(); // day of month
 }
 
 //Get the full date string (YYYY-MM-DD) in Korea time.
 export function getKoreaDate(koreaDateStr: string): string {
-  const normalized = koreaDateStr.replace(/\./g, '-');
+  // Remove timezone info
+  const normalized = koreaDateStr.replace(/\./g, '-').replace(/\+09:00$/, '');
   const kst = dayjs.tz(normalized, KST);
   return kst.format('YYYY-MM-DD');
 }
