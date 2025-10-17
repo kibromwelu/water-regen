@@ -10,7 +10,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateFeedIncreaseConditionDto } from './dto';
 import { MessageResponse } from 'src/common/response';
 import { FeedIncreaseConditionResponse } from './response';
-import { koreaToUtc, utcToKorea } from 'src/common/utils';
+import { getKoreaDate, koreaToUtc, utcToKorea } from 'src/common/utils';
 
 @Injectable()
 export class FeedIncreaseConditionService {
@@ -21,7 +21,7 @@ export class FeedIncreaseConditionService {
     ): Promise<MessageResponse> {
         try {
             const { name, tankId, referenceTime } = dto;
-
+            console.log(referenceTime);
             //  Ensure no existing condition for this tank
             const existingCondition =
                 await this.prisma.feedIncreaseCondition.findUnique({
@@ -43,7 +43,9 @@ export class FeedIncreaseConditionService {
             // const refHour = parseInt(referenceTime);
             const now = new Date();
             let koreanTime = utcToKorea(now.toString());
-            let refDateTime = koreaToUtc(koreanTime, referenceTime)
+            console.log("Korean Time:", koreanTime)
+            // let ;
+            let refDateTime = koreaToUtc(getKoreaDate(koreanTime), referenceTime)
             // const refDateTime = new Date(
             //     now.getFullYear(),
             //     now.getMonth(),
@@ -52,7 +54,7 @@ export class FeedIncreaseConditionService {
             //     0,
             //     0,
             // );
-
+            console.log("Reference DateTime:", refDateTime);
             // Fetch records within 24 hours before reference time
             const startTime = subHours(refDateTime, 24);
 
