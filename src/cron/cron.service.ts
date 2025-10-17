@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
 import { getKoreaHour, utcToKorea } from 'src/common/utils';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { addDays, addWeeks, addMonths, addYears, isAfter } from 'date-fns';
 
 @Injectable()
 export class CronService {
@@ -10,7 +11,7 @@ export class CronService {
 
     constructor(private prisma: PrismaService) { }
 
-    @Cron(CronExpression.EVERY_MINUTE)
+    @Cron(CronExpression.EVERY_HOUR)
     async checkFeedingAlerts() {
         const currentHour = new Date()
         let currentKoreaTime = utcToKorea(currentHour.toString())
@@ -120,4 +121,91 @@ export class CronService {
             console.log("Error creating todo:", error);
         }
     }
+
+    // Run every 5 minutes
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async handleRecurringConditions() {
+
+    const now = new Date();
+
+    // Fetch all active recurring conditions
+    const recurringConditions = await this.prisma.recurringCondition.findMany({
+      include: {
+        tank: true,
+      },
+    });
+
+    for (const condition of recurringConditions) {
+      const {
+        id,
+        tankId,
+        name,
+        intervalType,
+        intervalValue,
+        endDate,
+        endingCount,
+        lastMessageSent,
+        totalMessageSent,
+        message,
+      } = condition;
+
+      // Check stop conditions
+      if (endDate && isAfter(now, endDate)) {
+        console.log(`Condition ${id} expired due to endDate.`);
+        continue;
+      }
+
+      if (endingCount && totalMessageSent >= endingCount) {
+        console.log(`Condition ${id} reached ending count.`);
+        continue;
+      }
+
+      // Calculate next trigger time
+      let nextTrigger = new Date(lastMessageSent);
+      switch (intervalType) {
+        case 'DAYS':
+          nextTrigger = addDays(lastMessageSent, intervalValue);
+          break;
+        case 'WEEKS':
+          nextTrigger = addWeeks(lastMessageSent, intervalValue);
+          break;
+        case 'MONTHS':
+          nextTrigger = addMonths(lastMessageSent, intervalValue);
+          break;
+        case 'YEARS':
+          nextTrigger = addYears(lastMessageSent, intervalValue);
+          break;
+      }
+
+      // Check if it's time to trigger
+      if (isAfter(now, nextTrigger)) {
+        await this.prisma.$transaction(async (tx) => {
+          // Create todo
+          await tx.todo.create({
+            data: {
+              tankId,
+              message,
+              type: 'RECURRING',
+            },
+          });
+
+          // Update recurring condition
+          await tx.recurringCondition.update({
+            where: { id },
+            data: {
+              lastMessageSent: now,
+              totalMessageSent: { increment: 1 },
+            },
+          });
+        });
+
+        console.log(
+          `Triggered recurring condition: ${name} for tank ${tankId}`,
+        );
+
+        // Send FCM notification
+      }
+    }
+
+  }
 }
