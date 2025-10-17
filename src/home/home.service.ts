@@ -9,6 +9,7 @@ import { GetHomeDto } from './dto';
 import {
   getKoreaDate,
   getKoreaDay,
+  getKoreaHour,
   koreaToUtc,
   utcToKorea,
 } from 'src/common/utils';
@@ -31,13 +32,23 @@ export class HomeService {
       if (dto.startDate && dto.endDate) {
         if (dto.isHourlyView) {
           // only for one day
-          startDate = new Date(koreaToUtc(dto.startDate));
-          dto.endDate = undefined;
+          // choose the starting date for today
+          let now = new Date();
+          dto.startDate = getKoreaDate(utcToKorea(now.toString()));
           const normalizedDate = dto.startDate.replace(/\./g, '-');
+          startDate = new Date(koreaToUtc(normalizedDate));
           endDate = new Date(koreaToUtc(normalizedDate, '23:59:59.999'));
+          dto.endDate = undefined;
+
+          // choose the starting date for the provided startDate
+          // startDate = new Date(koreaToUtc(dto.startDate));
+          // dto.endDate = undefined;
+          // const normalizedDate = dto.startDate.replace(/\./g, '-');
+          // endDate = new Date(koreaToUtc(normalizedDate, '23:59:59.999'));
         } else {
           startDate = new Date(koreaToUtc(dto.startDate));
-          endDate = new Date(koreaToUtc(dto.endDate));
+          const normalizedDate = dto.endDate.replace(/\./g, '-');
+          endDate = new Date(koreaToUtc(normalizedDate, '23:59:59.999'));
         }
       } else if (dto.startDate && !dto.endDate) {
         startDate = new Date(koreaToUtc(dto.startDate));
@@ -47,13 +58,18 @@ export class HomeService {
       } else {
         if (dto.isHourlyView) {
           // only for one day
-          startDate = new Date();
-          dto.startDate = getKoreaDate(utcToKorea(startDate));
+          let now = new Date();
+          dto.startDate = getKoreaDate(utcToKorea(now.toString()));
           const normalizedDate = dto.startDate.replace(/\./g, '-');
+          startDate = new Date(koreaToUtc(normalizedDate));
           endDate = new Date(koreaToUtc(normalizedDate, '23:59:59.999'));
         } else {
-          endDate = new Date();
-          startDate = new Date();
+          let now = new Date();
+          let nowDate = getKoreaDate(utcToKorea(now.toString()));
+          const normalizedDate = nowDate.replace(/\./g, '-');
+          startDate = new Date(koreaToUtc(normalizedDate));
+          endDate = new Date(koreaToUtc(normalizedDate, '23:59:59.999'));
+
           startDate.setDate(endDate.getDate() - 7); // default to last 7 days
           dto.startDate = getKoreaDate(utcToKorea(startDate));
           dto.endDate = getKoreaDate(utcToKorea(endDate));
@@ -115,7 +131,7 @@ export class HomeService {
         todoList = tanks[0].todos;
         tankCreationAt = tanks[0].createdAt;
       }
-
+      
       const getHasbandryData = await this.prisma.husbandryData.findMany({
         where: {
           tankId: tankId,
@@ -144,7 +160,7 @@ export class HomeService {
       // Transform the data to include only date and parameters
       const husbandryDataSummary = getHasbandryData.map((data) => ({
         date: getKoreaDate(utcToKorea(data.date.toString())),
-        time: getKoreaDay(utcToKorea(data.date.toString())),
+        time: getKoreaHour(utcToKorea(data.date.toString())),
         ph: data.ph,
         do: data.do,
         alk: data.alk,
@@ -164,6 +180,7 @@ export class HomeService {
               const key = data.time; // Group by hour
               if (!acc[key]) {
                 acc[key] = {
+                  date: data.date,
                   time: data.time,
                   count: 0,
                   ph: 0,
@@ -214,7 +231,7 @@ export class HomeService {
         }));
 
         // Sort by time
-        summaryData.sort((a, b) => a.time.localeCompare(b.time));
+        //summaryData.sort((a, b) => a.time.localeCompare(b.time));
       } else {
         // Group by date
         summaryData = Object.values(
@@ -273,7 +290,7 @@ export class HomeService {
         }));
 
         // Sort by date
-        summaryData.sort((a, b) => a.date.localeCompare(b.date));
+        //summaryData.sort((a, b) => a.date.localeCompare(b.date));
       }
 
       return {
