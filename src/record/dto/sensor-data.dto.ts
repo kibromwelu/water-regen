@@ -43,8 +43,8 @@ export class SensorDataDto {
     @IsOptional()
     @IsNumber()
     alk: number
-    @ApiPropertyOptional()
-    @IsOptional()
-    @IsNumber()
-    salinity: number
+    // @ApiPropertyOptional()
+    // @IsOptional()
+    // @IsNumber()
+    // salinity: number
 }

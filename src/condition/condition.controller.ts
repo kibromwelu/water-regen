@@ -1,12 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ConditionService } from './condition.service';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ConditionsListResponse, FeedingConditionDetailResponse } from './response';
 import { AlertConditionDto, CreateFeedingConditionDto, UpdateFeedingConditionDto } from './dto';
 import { MessageResponse } from 'src/common/response';
+import { JwtGuard } from 'src/common/guards';
 
 @Controller('condition')
 @ApiBearerAuth()
+@UseGuards(JwtGuard)
 export class ConditionController {
     constructor(private readonly conditionService: ConditionService) { }
     // common

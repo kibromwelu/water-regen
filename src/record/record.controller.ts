@@ -1,10 +1,13 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { RecordService } from './record.service';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { MessageResponse } from 'src/common/response';
 import { CreateHusbandryDataDto, SensorDataDto } from './dto';
+import { JwtGuard } from 'src/common/guards';
 
 @Controller('record')
+@ApiBearerAuth()
+@UseGuards(JwtGuard)
 export class RecordController {
     constructor(private readonly recordService: RecordService) { }
 

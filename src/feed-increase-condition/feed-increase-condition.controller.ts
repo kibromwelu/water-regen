@@ -1,11 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { FeedIncreaseConditionService } from './feed-increase-condition.service';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { MessageResponse } from 'src/common/response';
 import { CreateFeedIncreaseConditionDto } from './dto';
 import { FeedIncreaseConditionResponse } from './response';
+import { JwtGuard } from 'src/common/guards';
 
 @Controller('feed-increase-condition')
+@ApiBearerAuth()
+@UseGuards(JwtGuard)
 export class FeedIncreaseConditionController {
     constructor(private readonly feedIncreaseConditionService: FeedIncreaseConditionService) { }
 

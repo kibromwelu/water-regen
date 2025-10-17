@@ -63,7 +63,7 @@ export class RecordService {
                         nh4: dto.nh4,
                         no2: dto.no2,
                         alk: dto.alk,
-                        salinity: dto.salinity,
+                        // salinity: dto.salinity,
                         waterTemperature: dto.waterTemperature,
                     },
                 });
@@ -85,7 +85,7 @@ export class RecordService {
                         nh4: dto.nh4,
                         no2: dto.no2,
                         alk: dto.alk,
-                        salinity: dto.salinity,
+                        // salinity: dto.salinity,
                         waterTemperature: dto.waterTemperature,
                     },
                 });
@@ -149,7 +149,7 @@ export class RecordService {
                         no2: existingHusbandry.no2 ?? sensorData.no2,
                         waterTemperature: existingHusbandry.waterTemperature ?? sensorData.waterTemperature,
                         alk: existingHusbandry.alk ?? sensorData.alk,
-                        salinity: existingHusbandry.salinity ?? sensorData.salinity,
+                        // salinity: existingHusbandry.salinity ?? sensorData.salinity,
                     }
                 })
 
@@ -172,7 +172,7 @@ export class RecordService {
                         no2: sensorData.no2,
                         waterTemperature: sensorData.waterTemperature,
                         alk: sensorData.alk,
-                        salinity: sensorData.salinity,
+                        // salinity: sensorData.salinity,
                     }
                 });
                 await Promise.all([

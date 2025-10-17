@@ -51,10 +51,10 @@ export class CreateHusbandryDataDto {
     @IsOptional()
     @IsNumber()
     alk: number
-    @ApiPropertyOptional()
-    @IsOptional()
-    @IsNumber()
-    salinity: number
+    // @ApiPropertyOptional()
+    // @IsOptional()
+    // @IsNumber()
+    // salinity: number
     @ApiPropertyOptional({ type: [FeedingInfo] })
     @IsOptional()
     @IsArray()
