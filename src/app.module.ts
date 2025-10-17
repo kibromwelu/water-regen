@@ -13,6 +13,7 @@ import { ConditionModule } from './condition/condition.module';
 import { FeedIncreaseConditionModule } from './feed-increase-condition/feed-increase-condition.module';
 import { RecurringConditionModule } from './recurring-condition/recurring-condition.module';
 import { RecordModule } from './record/record.module';
+import { HomeModule } from './home/home.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { RecordModule } from './record/record.module';
     FeedIncreaseConditionModule,
     RecurringConditionModule,
     RecordModule,
+    HomeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

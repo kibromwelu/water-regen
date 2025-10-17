@@ -6,9 +6,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateRecurringConditionDto, UpdateRecurringConditionDto } from './dto';
+import {
+  CreateRecurringConditionDto,
+  UpdateRecurringConditionDto,
+} from './dto';
 import { MessageResponse } from 'src/common/response';
 import { GetRecurringConditionDetailResponse } from './response';
+import { getKoreaDate, koreaToUtc, utcToKorea } from 'src/common/utils';
 
 @Injectable()
 export class RecurringConditionService {
@@ -19,6 +23,10 @@ export class RecurringConditionService {
     dto: CreateRecurringConditionDto,
   ): Promise<MessageResponse> {
     try {
+      let utcDate;
+      if (dto.endDate) {
+        utcDate = koreaToUtc(dto.endDate);
+      }
       const existingTank = await this.prisma.tank.findFirst({
         where: {
           id: dto.tankId,
@@ -41,7 +49,7 @@ export class RecurringConditionService {
                 name: dto.name,
                 intervalType: dto.intervalType,
                 intervalValue: dto.intervalValue,
-                endDate: dto.endDate || undefined,
+                endDate: utcDate || undefined,
                 endingCount: dto.endingCount || undefined,
                 message: dto.message,
                 lastMessageSent: new Date(),
@@ -79,6 +87,11 @@ export class RecurringConditionService {
     dto: UpdateRecurringConditionDto,
   ): Promise<MessageResponse> {
     try {
+      let utcDate;
+      if (dto.endDate) {
+        utcDate = koreaToUtc(dto.endDate);
+      }
+
       if (dto.tankId) {
         const existingTank = await this.prisma.tank.findFirst({
           where: {
@@ -111,7 +124,7 @@ export class RecurringConditionService {
             name: dto.name || undefined,
             intervalType: dto.intervalType || undefined,
             intervalValue: dto.intervalValue || undefined,
-            endDate: dto.endDate || undefined,
+            endDate: utcDate || undefined,
             endingCount: dto.endingCount || undefined,
             message: dto.message,
           },
@@ -155,7 +168,15 @@ export class RecurringConditionService {
       if (!existingRecurringCondition) {
         throw new NotFoundException('Recurring condition not found');
       }
-      return existingRecurringCondition;
+      
+      return {
+        ...existingRecurringCondition,
+        endDate: existingRecurringCondition.endDate
+          ? getKoreaDate(
+              utcToKorea(existingRecurringCondition.endDate.toString()),
+            )
+          : null,
+      };
     } catch (error) {
       // Handle any errors
       const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
@@ -163,11 +184,15 @@ export class RecurringConditionService {
     }
   }
 
-  async deleteRecurringCondition(userId: string, id: string): Promise<MessageResponse> {
+  async deleteRecurringCondition(
+    userId: string,
+    id: string,
+  ): Promise<MessageResponse> {
     try {
-      const existingRecurringCoundition = await this.prisma.recurringCondition.findUnique({
-        where: { id: id, tank:{userId} },
-      });
+      const existingRecurringCoundition =
+        await this.prisma.recurringCondition.findUnique({
+          where: { id: id, tank: { userId } },
+        });
       if (!existingRecurringCoundition) {
         throw new NotFoundException('Recurring condition not found');
       }

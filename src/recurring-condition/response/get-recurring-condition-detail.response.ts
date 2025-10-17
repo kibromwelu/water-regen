@@ -24,8 +24,8 @@ export class GetRecurringConditionDetailResponse {
   @IsEnum(IntervalType)
   intervalType: IntervalType;
 
-  @ApiProperty({ type: Date })
-  endDate: Date | null;
+  @ApiProperty({ type: String })
+  endDate: string | null;
 
   @ApiProperty({ type: Number })
   endingCount: number | null;
