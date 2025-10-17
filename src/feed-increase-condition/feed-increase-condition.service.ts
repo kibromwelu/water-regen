@@ -10,6 +10,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateFeedIncreaseConditionDto } from './dto';
 import { MessageResponse } from 'src/common/response';
 import { FeedIncreaseConditionResponse } from './response';
+import { koreaToUtc, utcToKorea } from 'src/common/utils';
 
 @Injectable()
 export class FeedIncreaseConditionService {
@@ -21,7 +22,7 @@ export class FeedIncreaseConditionService {
         try {
             const { name, tankId, referenceTime } = dto;
 
-            // 1️⃣ Ensure no existing condition for this tank
+            //  Ensure no existing condition for this tank
             const existingCondition =
                 await this.prisma.feedIncreaseCondition.findUnique({
                     where: { tankId },
@@ -33,25 +34,24 @@ export class FeedIncreaseConditionService {
                 );
             }
 
-            // 2️⃣ Ensure tank exists
             const tank = await this.prisma.tank.findUnique({
                 where: { id: tankId },
             });
             if (!tank) throw new NotFoundException('Tank not found');
 
-            // 3️⃣ Compute daily expected feed amount based on previous 24 hours
-            const refHour = parseInt(referenceTime);
+            //  Compute daily expected feed amount based on previous 24 hours
+            // const refHour = parseInt(referenceTime);
             const now = new Date();
-
-            // Go back to the last reference time (approximate)
-            const refDateTime = new Date(
-                now.getFullYear(),
-                now.getMonth(),
-                now.getDate(),
-                refHour,
-                0,
-                0,
-            );
+            let koreanTime = utcToKorea(now.toString());
+            let refDateTime = koreaToUtc(koreanTime, referenceTime)
+            // const refDateTime = new Date(
+            //     now.getFullYear(),
+            //     now.getMonth(),
+            //     now.getDate(),
+            //     refHour,
+            //     0,
+            //     0,
+            // );
 
             // Fetch records within 24 hours before reference time
             const startTime = subHours(refDateTime, 24);
@@ -73,7 +73,7 @@ export class FeedIncreaseConditionService {
             }
             dailyExpectedFeedAmount = dailyExpectedFeedAmount + 0.1 * dailyExpectedFeedAmount
 
-            // 4️⃣ Create the condition
+            //  Create the condition
             await this.prisma.feedIncreaseCondition.create({
                 data: {
                     name,
