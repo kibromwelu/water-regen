@@ -2,10 +2,14 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as admin from 'firebase-admin';
 import { MessageResponse } from 'src/common/response';
+import { SocketGateway } from 'src/websocket/socket.gateway';
 
 @Injectable()
 export class FcmService {
-    constructor(private readonly prisma: PrismaService) {
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly socketGateway: SocketGateway,
+    ) {
     // This should be initialized only once
     if (!admin.apps.length) {
       admin.initializeApp({
@@ -162,7 +166,22 @@ export class FcmService {
         priority: 'high',
       });
 
+      const count = await this.prisma.todo.count({
+        where: {
+          tankId: data.tankId,
+        },
+      });
+
       // send web push notification
+      this.socketGateway.emitToEventName({
+          eventName: `todo:${data.tankId}`,
+          data:{
+            id: data.todoId,
+            message: data.message,
+            createdAt: data.createdAt,
+            totalTodo: count
+          }
+        });
       return { message: 'Todo notification has been sent successfully' };
     } catch (error) {
       const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;

@@ -112,13 +112,12 @@ export class CronService {
 
               const feedPerTime = updatedFeed.expectedFeedAmount / 4;
               console.log('feed per time:', feedPerTime);
-              //await this.createTodo(feed.tankId, feed.tank.name, feedPerTime);
+              
               const newTodo = await tx.todo.create({
                 data: {
                   tankId: feed.tankId,
                   type: 'FEEDING_INCREASE',
                   message: `Feeding Alert: Please feed approximately ${feedPerTime.toFixed(2)} units to Tank "${feed.tank.name}".`,
-                  //createdAt: new Date(),
                 },
                 include: { tank: true },
               });
@@ -138,21 +137,6 @@ export class CronService {
           }
         }
       }
-    }
-  }
-
-  async createTodo(tankId: string, tankName: string, feedPerTime: number) {
-    try {
-      await this.prisma.todo.create({
-        data: {
-          tankId: tankId,
-          type: 'FEEDING_INCREASE',
-          message: `Feeding Alert: Please feed approximately ${feedPerTime.toFixed(2)} units to Tank "${tankName}".`,
-          createdAt: new Date(),
-        },
-      });
-    } catch (error) {
-      console.log('Error creating todo:', error);
     }
   }
 

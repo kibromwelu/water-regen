@@ -15,6 +15,7 @@ import { RecurringConditionModule } from './recurring-condition/recurring-condit
 import { RecordModule } from './record/record.module';
 import { HomeModule } from './home/home.module';
 import { FcmModule } from './fcm/fcm.module';
+import { WebsocketModule } from './websocket/websocket.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { FcmModule } from './fcm/fcm.module';
     RecordModule,
     HomeModule,
     FcmModule,
+    WebsocketModule,
   ],
   controllers: [AppController],
   providers: [AppService],
