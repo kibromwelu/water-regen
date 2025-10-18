@@ -4,10 +4,14 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { MessageResponse } from 'src/common/response';
 import { koreaToUtc } from 'src/common/utils';
 import { SensorType } from '@prisma/client';
+import { FcmService } from 'src/fcm/fcm.service';
 
 @Injectable()
 export class RecordService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private fcmService: FcmService,
+    ) { }
 
     private async checkConditions(tankId: string, sensor: SensorType, value?: number): Promise<void> {
         if (value === undefined || value === null) return;
@@ -27,13 +31,26 @@ export class RecordService {
         for (const cond of conditions) {
             const operator = operatorMap[cond.condition] || '==';
             if (eval(`${value} ${operator} ${cond.value}`)) {
-                await this.prisma.todo.create({
+                const todo = await this.prisma.todo.create({
                     data: {
                         tankId,
                         message: cond.message,
                         type: cond.type,
                     },
+                    include: { tank: true },
                 });
+
+                // Send FCM notification
+        if (todo) {
+          await this.fcmService.sendTodoNotification({
+            userId: todo.tank.userId,
+            tankId: todo.tankId,
+            tankName: todo.tank.name,
+            todoId: todo.id,
+            message: todo.message,
+            createdAt: todo.createdAt,
+          });
+        }
             }
         }
     }

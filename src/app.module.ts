@@ -14,6 +14,7 @@ import { FeedIncreaseConditionModule } from './feed-increase-condition/feed-incr
 import { RecurringConditionModule } from './recurring-condition/recurring-condition.module';
 import { RecordModule } from './record/record.module';
 import { HomeModule } from './home/home.module';
+import { FcmModule } from './fcm/fcm.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { HomeModule } from './home/home.module';
     RecurringConditionModule,
     RecordModule,
     HomeModule,
+    FcmModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -13,10 +13,14 @@ import {
 import { MessageResponse } from 'src/common/response';
 import { GetRecurringConditionDetailResponse } from './response';
 import { getKoreaDate, koreaToUtc, utcToKorea } from 'src/common/utils';
+import { FcmService } from 'src/fcm/fcm.service';
 
 @Injectable()
 export class RecurringConditionService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private fcmService: FcmService,
+  ) {}
 
   async createRecurringCondition(
     userId: string,
@@ -43,7 +47,7 @@ export class RecurringConditionService {
         async (tx) => {
           // create a recurring condition
           const newRecurringCondition =
-            await this.prisma.recurringCondition.create({
+            await tx.recurringCondition.create({
               data: {
                 tankId: dto.tankId,
                 name: dto.name,
@@ -58,18 +62,29 @@ export class RecurringConditionService {
             });
 
           // create a todo list
-          const todo = await this.prisma.todo.create({
+          const todo = await tx.todo.create({
             data: {
               tankId: dto.tankId,
               message: dto.message,
               type: 'RECURRING',
             },
+            include: { tank: true },
           });
           return { newRecurringCondition, todo };
         },
       );
 
       // Todo: send fcm notification
+      if (todo) {
+          await this.fcmService.sendTodoNotification({
+            userId: todo.tank.userId,
+            tankId: todo.tankId,
+            tankName: todo.tank.name,
+            todoId: todo.id,
+            message: todo.message,
+            createdAt: todo.createdAt,
+          });
+        }
 
       return {
         message: 'Recurring condition created successfully',

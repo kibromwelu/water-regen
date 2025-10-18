@@ -29,6 +29,7 @@ model User {
   refreshToken          RefreshToken?
   passwordChangeRequest PasswordChangeRequest[]
   tanks                 Tank[]
+  scmTokens              FcmToken[]
 }
 
 model SocialAccount {
@@ -79,7 +80,7 @@ model Tank {
   name                 String
   whitelegShrimpStrain String
   averageBodyWeight    Float
-  salinity         Float?
+  salinity             Float?
   numberStocked        Int
   createdAt            DateTime  @default(now())
   updatedAt            DateTime? @updatedAt
@@ -97,7 +98,7 @@ model Tank {
 model HusbandryData {
   id               String    @id @default(uuid())
   date             DateTime
-  isClean   Boolean?
+  isClean          Boolean?
   waterTemperature Float?
   do               Float?
   ph               Float?
@@ -211,6 +212,15 @@ model Record {
 
   tankId String
   tank   Tank   @relation(fields: [tankId], references: [id], onDelete: Cascade)
+}
+
+model FcmToken {
+  id        String    @id @default(uuid())
+  token     String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum UserStatus {
