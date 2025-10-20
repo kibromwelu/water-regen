@@ -5,7 +5,7 @@ import { IsBoolean, IsDate, IsNumber, IsOptional, IsString } from "class-validat
 export class SensorDataDto {
     @ApiProperty()
     @IsNumber()
-    tankerId: number
+    tankerId: string
     @ApiProperty()
     @IsOptional()
     @Type(() => Date)

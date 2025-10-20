@@ -1,4 +1,4 @@
-export function formatId(id: number, prefix = 'T', width = 4): string {
+export function formatId(id: number, prefix = 'T', width = 6): string {
     if (!Number.isFinite(id) || id < 0) {
         throw new Error(`Invalid ID: ${id}`);
     }

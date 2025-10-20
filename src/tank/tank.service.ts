@@ -9,10 +9,11 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTankDto, UpdateTankDto } from './dto';
 import { MessageResponse } from 'src/common/response';
 import { GetTankDetailResponse, GetTanksListResponse } from './response';
+import { formatId } from 'src/common/utils';
 
 @Injectable()
 export class TankService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async createTank(
     userId: string,
@@ -66,7 +67,7 @@ export class TankService {
       });
 
       if (!existingTank) {
-         throw new NotFoundException('Tank not found');
+        throw new NotFoundException('Tank not found');
       }
 
       // Proceed with the update if the tank exists and belongs to the user
@@ -105,7 +106,14 @@ export class TankService {
         },
       });
 
-      return tanks;
+      let formattedTanks = tanks.map((tank) => ({
+        id: tank.id,
+        name: tank.name,
+        tankerId: formatId(tank.tankerId),
+        createdAt: tank.createdAt,
+      }));
+
+      return formattedTanks;
     } catch (error) {
       // Handle any errors
       const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;

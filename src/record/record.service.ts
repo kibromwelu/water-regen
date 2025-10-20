@@ -2,7 +2,7 @@ import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateEstimatedHarvestDto, CreateHusbandryDataDto, GetEstimatedRecordDto, SensorDataDto } from './dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MessageResponse } from 'src/common/response';
-import { getKoreaHour, koreaToUtc, utcToKorea } from 'src/common/utils';
+import { getKoreaHour, getRealId, koreaToUtc, utcToKorea } from 'src/common/utils';
 import { SensorType } from '@prisma/client';
 import { FcmService } from 'src/fcm/fcm.service';
 import { CreateEstimatedRecordResponse, GetEstimatedRecordResponse } from './response';
@@ -171,7 +171,8 @@ export class RecordService {
   async addSensorHusbandryData(dto: SensorDataDto): Promise<MessageResponse> {
     try {
       let { tankerId, date, ...sensorData } = dto;
-      let tank = await this.prisma.tank.findUnique({ where: { tankerId } });
+      let dbTankerId = getRealId(tankerId);
+      let tank = await this.prisma.tank.findUnique({ where: { tankerId: dbTankerId } });
       if (!tank) {
         throw new HttpException('Tank not found', 404);
       }
