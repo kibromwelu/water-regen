@@ -111,7 +111,7 @@ export class UserService {
         },
       });
 
-      // TODO: send SMS
+      // Send SMS
       //const sms = await this.smsService.sendOtpSms(phoneNumber, code)
 
       return {

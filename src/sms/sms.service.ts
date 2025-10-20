@@ -27,7 +27,8 @@ export class SmsService {
   }
 
   async sendOtpSms(phoneNumber: string, otpCode: string) {
-    // Normalize phone number to international format
+    console.log(`Sending OTP SMS to ${phoneNumber} with code ${otpCode}`);
+    // Normalize phone number to local format [01123456789] 
     const normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
     const timestamp = Date.now().toString();
     const method = 'POST';
@@ -45,8 +46,7 @@ export class SmsService {
     const body = {
       type: 'SMS',
       from: this.senderNumber,
-      //to: [phoneNumber],
-      content: `Your verification code is ${otpCode}`,
+      content: `[워터리젠] 인증 코드 : ${otpCode}`,
       messages: [
         {
           to: normalizedPhoneNumber,
@@ -63,7 +63,7 @@ export class SmsService {
       console.log(`SMS sent to ${normalizedPhoneNumber}: ${JSON.stringify(response.data)}`);
       return { success: true, data: response.data };
     } catch (error) {
-      console.error(`SMS send failed: ${error.response?.data?.message || error.message}`);
+      console.log(`SMS send failed: ${error.response?.data?.message || error.message}`);
       throw new Error(`Failed to send OTP SMS: ${error.response?.data?.message || error.message}`);
     }
   }
@@ -71,7 +71,7 @@ export class SmsService {
   private makeSignature(method: string, url: string, timestamp: string): string {
     const space = ' ';
     const newLine = '\n';
-    const message = `${method}${space}${url}${newLine}${timestamp}${newLine}${this.accessKey}${newLine}`;
+    const message = `${method}${space}${url}${newLine}${timestamp}${newLine}${this.accessKey}`;
     const hmac = crypto.createHmac('sha256', this.secretKey);
     hmac.update(message);
     return hmac.digest('base64');

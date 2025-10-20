@@ -39,10 +39,9 @@ export class AuthService {
                 }
             });
 
-            // TODO: Send SMS with the code
+            // Send SMS with the code
             //const sms = await this.smsService.sendOtpSms(dto.phoneNumber, code)
-
-            console.log('Verification code:', verificationRecord.code);
+            
             return { message: 'Verification code sent' };
 
         } catch (error) {
