@@ -9,6 +9,9 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { MessageResponse } from 'src/common/response';
+import * as jwt from 'jsonwebtoken';
+import * as jwksClient from 'jwks-rsa';
+
 import {
   ChangePasswordDto,
   SendVerficationCodeDto,
@@ -20,10 +23,13 @@ import { SmsService } from 'src/sms/sms.service';
 
 @Injectable()
 export class UserService {
+  private jwksClient = jwksClient({
+    jwksUri: 'https://appleid.apple.com/auth/keys',
+  });
   constructor(
     private readonly prisma: PrismaService,
     private readonly smsService: SmsService,
-  ) {}
+  ) { }
 
   async getUserProfile(userId: string): Promise<GetProfileResponse> {
     try {
@@ -450,6 +456,79 @@ export class UserService {
         error.response?.data?.error_description || error.message,
         error.response?.status || 500,
       );
+    }
+  }
+
+
+
+
+  private async getAppleSigningKey(kid: string): Promise<string> {
+    try {
+      const key = await this.jwksClient.getSigningKey(kid);
+      return key.getPublicKey();
+    } catch (error) {
+      throw new Error(`Failed to get Apple signing key: ${error.message}`);
+    }
+  }
+
+  async connectWithApple(identityToken: string, userId: string) {
+    try {
+      if (!identityToken) {
+        throw new Error('Identity token is required');
+      }
+      let user = await this.prisma.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      // Decode token header to get key ID
+      const decodedToken = jwt.decode(identityToken, { complete: true });
+      if (!decodedToken) {
+        throw new Error('Invalid identity token format');
+      }
+
+      const { header, payload } = decodedToken as any;
+
+      if (!header?.kid) {
+        throw new Error('Missing key ID in token header');
+      }
+
+      // Get Apple's public key
+      const publicKey = await this.getAppleSigningKey(header.kid);
+
+      // Verify the token signature and claims
+      const verifiedToken = jwt.verify(identityToken, publicKey, {
+        algorithms: ['RS256'],
+        issuer: 'https://appleid.apple.com',
+        audience: process.env.APPLE_BUNDLE_ID, // Your app's bundle ID
+      }) as any;
+      let existingAccount = await this.prisma.socialAccount.findFirst({
+        where: { provider: 'APPLE', providerId: verifiedToken.sub },
+      });
+      if (existingAccount && existingAccount.userId == userId) {
+        throw new BadRequestException(
+          'You have already connected Apple account before!',
+        );
+      } else if (existingAccount && existingAccount.userId !== userId) {
+        throw new BadRequestException(
+          "Account is already linked with someone's account",
+        );
+      }
+      let newAccount = await this.prisma.socialAccount.create({
+        data: {
+          providerId: verifiedToken.sub,
+          provider: 'APPLE',
+          userId,
+        },
+      });
+      return { message: 'Apple account connected successfully' };
+      // return {
+      //   email: verifiedToken.email,
+      //   sub: verifiedToken.sub,
+      //   email_verified: verifiedToken.email_verified === 'true' || verifiedToken.email_verified === true,
+      //   is_private_email: verifiedToken.is_private_email === 'true' || verifiedToken.is_private_email === true,
+      // };
+    } catch (error) {
+      throw new Error(`Apple identity token verification failed: ${error.message}`);
     }
   }
 }

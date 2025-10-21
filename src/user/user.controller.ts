@@ -25,7 +25,7 @@ import { MessageResponse } from 'src/common/response';
 @UseGuards(JwtGuard)
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Get('my-profile')
   @ApiOperation({ summary: 'Get user profile' })
@@ -155,5 +155,17 @@ export class UserController {
     @CurrentUserId() userId: string,
   ) {
     return this.userService.linkGoogle(token, userId);
+  }
+  @Post('link-apple')
+  @ApiOperation({ summary: 'Connect Apple account' })
+  @ApiResponse({ status: HttpStatus.OK, type: MessageResponse })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Bad request' })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized access' })
+  @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'Internal server error' })
+  async connectApple(
+    @Body('identityToken') identityToken: string,
+    @CurrentUserId() userId: string,
+  ) {
+    return this.userService.connectWithApple(identityToken, userId);
   }
 }

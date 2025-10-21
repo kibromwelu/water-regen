@@ -38,6 +38,8 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.18",
     "firebase-admin": "^13.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.2.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
