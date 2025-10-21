@@ -29,7 +29,7 @@ model User {
   refreshToken          RefreshToken?
   passwordChangeRequest PasswordChangeRequest[]
   tanks                 Tank[]
-  scmTokens              FcmToken[]
+  scmTokens             FcmToken[]
 }
 
 model SocialAccount {
@@ -200,7 +200,8 @@ model Todo {
 
 model Record {
   id                String    @id @default(uuid())
-  date              DateTime
+  startDate         DateTime
+  endDate           DateTime
   averageBodyWeight Float?
   shrimpWeight      Float?
   feedAdded         Float?

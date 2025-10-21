@@ -18,7 +18,7 @@ import { GetHomeResponse } from './response';
 
 @Injectable()
 export class HomeService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async getHome(userId: string, dto: GetHomeDto): Promise<GetHomeResponse> {
     try {
@@ -27,7 +27,7 @@ export class HomeService {
       let endDate;
       let todoList;
       let summaryData;
-      let tankCreationAt;
+      let tankCreationAt, averageBodyWeight;
 
       if (dto.startDate && dto.endDate) {
         if (dto.isHourlyView) {
@@ -98,6 +98,7 @@ export class HomeService {
         tankId = dto.tankId;
         todoList = tank.todos;
         tankCreationAt = tank.createdAt;
+        averageBodyWeight = tank.averageBodyWeight;
       } else {
         const tanks = await this.prisma.tank.findMany({
           where: {
@@ -130,8 +131,9 @@ export class HomeService {
         tankId = tanks[0].id;
         todoList = tanks[0].todos;
         tankCreationAt = tanks[0].createdAt;
+        averageBodyWeight = tanks[0].averageBodyWeight;
       }
-      
+
       const getHasbandryData = await this.prisma.husbandryData.findMany({
         where: {
           tankId: tankId,
@@ -293,6 +295,13 @@ export class HomeService {
         //summaryData.sort((a, b) => a.date.localeCompare(b.date));
       }
 
+      let lastRecord = await this.prisma.record.findFirst({
+        where: {
+          tankId: tankId,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
       return {
         tankId,
         totalTodo: todoList.length,
@@ -301,11 +310,11 @@ export class HomeService {
         startDate: dto.startDate,
         endDate: dto.endDate ? dto.endDate : null,
         isHourlyView: dto.isHourlyView ? true : false,
-        doc: Math.ceil(
+        doc: Math.floor(
           (new Date().getTime() - new Date(tankCreationAt).getTime()) /
-            (1000 * 60 * 60 * 24),
+          (1000 * 60 * 60 * 24),
         ), // how many days does it pass from the tank creation until now in days
-        AverageBodyWeight: 1, // TODO: to be calculated later based on feeding and growth data
+        AverageBodyWeight: lastRecord?.averageBodyWeight ?? averageBodyWeight,
       };
     } catch (error) {
       // Handle any errors
