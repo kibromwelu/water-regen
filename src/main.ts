@@ -13,6 +13,7 @@ async function bootstrap() {
     .setDescription('Endpoints for Water Regen’s app.')
     .setVersion('1.0')
     .addBearerAuth()
+    .addBasicAuth() 
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
