@@ -168,13 +168,13 @@ export class FcmService {
 
       const count = await this.prisma.todo.count({
         where: {
-          tankId: data.tankId,
+          tank: {userId: data.userId},
         },
       });
 
-      // send web push notification
-      this.socketGateway.emitToEventName({
-          eventName: `todo:${data.tankId}`,
+      // send web socket notification
+      this.socketGateway.emitTodoToUser({
+          userId: data.userId,
           data:{
             id: data.todoId,
             message: data.message,

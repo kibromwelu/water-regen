@@ -89,9 +89,27 @@ export class SocketGateway
     }
 
     this.server.emit(eventName, {
-      ...data,
-      updatedDetail: data.updatedDetail ? data.updatedDetail : false
+      ...data
     });
+  }
+
+  emitTodoToUser(payload: { userId: string; data: any }) {
+    const { userId, data } = payload;
+
+    if (!userId) {
+      console.log('WebSocket emit skipped: Missing reciever ID');
+      return;
+    }
+
+    for (const [socketId, user] of this.connectedClients.entries()) {
+      if (user.id === userId) {
+        console.log(`Emitting todo event to user: ${user.id}`);
+        this.server.to(socketId).emit('todo', {
+          ...data,
+        });
+      }
+    }
+
   }
 
 
