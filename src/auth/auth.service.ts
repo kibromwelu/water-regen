@@ -10,10 +10,13 @@ import { changeExpireInToMillisecond } from 'src/common/utils';
 import { JwtService } from '@nestjs/jwt';
 import axios from 'axios';
 import { SmsService } from 'src/sms/sms.service';
-
+import * as jwt from 'jsonwebtoken';
+import * as jwksClient from 'jwks-rsa';
 @Injectable()
 export class AuthService {
-
+    private jwksClient = jwksClient({
+        jwksUri: 'https://appleid.apple.com/auth/keys',
+    });
     constructor(
         private readonly prisma: PrismaService,
         private readonly config: ConfigService,
@@ -34,10 +37,10 @@ export class AuthService {
 
             let verificationRecord = await this.prisma.verificationCode.upsert({
                 where: { phoneNumber: dto.phoneNumber },
-                update: { 
-                    code: code, 
+                update: {
+                    code: code,
                     expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes from now 
-                    },
+                },
                 create: {
                     phoneNumber: dto.phoneNumber,
                     code: code,
@@ -47,7 +50,7 @@ export class AuthService {
 
             // Send SMS with the code
             //const sms = await this.smsService.sendOtpSms(dto.phoneNumber, code)
-            
+
             return { message: 'Verification code sent' };
 
         } catch (error) {
@@ -354,5 +357,119 @@ export class AuthService {
             throw new HttpException(error.message, error.status || 500);
         }
     }
+    async loginWithGoogle(googleToken: string,): Promise<LoginResponse> {
+        try {
+            let token = { accessToken: '', refreshToken: '' };
+            const googleAccessToken = googleToken?.replace('Bearer ', '');
+            if (!googleAccessToken) {
+                throw new UnauthorizedException('Access token is required');
+            }
+
+
+            // Verify token with Google
+            const googleResponse = await axios.get(
+                'https://www.googleapis.com/oauth2/v3/userinfo',
+                {
+                    headers: { Authorization: `Bearer ${googleAccessToken}` },
+                },
+            );
+            const { sub: providerId, email } = googleResponse.data;
+            if (!providerId) {
+                throw new UnauthorizedException('Invalid Google token');
+            }
+            let localUser = await this.prisma.user.findFirst({
+                where: {
+                    socialAccount: {
+                        some: {
+                            providerId: providerId,
+                            provider: 'APPLE',
+                        },
+                    },
+                },
+
+            });
+
+            if (!localUser) {
+                throw new NotFoundException("You haven't connected your account");
+            }
+            token = await this.generateTokens(localUser.id);
+            return {
+                accessToken: token.accessToken,
+                refreshToken: token.refreshToken,
+                id: localUser.id
+            };
+        } catch (error) {
+            console.error('Google linking error:', error.message);
+            throw new HttpException(
+                error.response?.data?.error_description || error.message,
+                error.response?.status || 500,
+            );
+        }
+    }
+
+    private async getAppleSigningKey(kid: string): Promise<string> {
+        try {
+            const key = await this.jwksClient.getSigningKey(kid);
+            return key.getPublicKey();
+        } catch (error) {
+            throw new Error(`Failed to get Apple signing key: ${error.message}`);
+        }
+    }
+
+    async loginWithApple(identityToken: string): Promise<LoginResponse> {
+        try {
+            let token = { accessToken: '', refreshToken: '' };
+            if (!identityToken) {
+                throw new Error('Identity token is required');
+            }
+
+            // Decode token header to get key ID
+            const decodedToken = jwt.decode(identityToken, { complete: true });
+            if (!decodedToken) {
+                throw new Error('Invalid identity token format');
+            }
+
+            const { header, payload } = decodedToken as any;
+
+            if (!header?.kid) {
+                throw new Error('Missing key ID in token header');
+            }
+
+            // Get Apple's public key
+            const publicKey = await this.getAppleSigningKey(header.kid);
+
+            // Verify the token signature and claims
+            const verifiedToken = jwt.verify(identityToken, publicKey, {
+                algorithms: ['RS256'],
+                issuer: 'https://appleid.apple.com',
+                audience: process.env.APPLE_BUNDLE_ID, // Your app's bundle ID
+            }) as any;
+            let localUser = await this.prisma.user.findFirst({
+                where: {
+                    socialAccount: {
+                        some: {
+                            providerId: verifiedToken.sub,
+                            provider: 'APPLE',
+                        },
+                    },
+                },
+
+            });
+            if (!localUser) {
+                throw new NotFoundException("You haven't connected your account");
+            }
+            token = await this.generateTokens(localUser.id);
+            return {
+                accessToken: token.accessToken,
+                refreshToken: token.refreshToken,
+                id: localUser.id
+            };
+
+        } catch (error) {
+            throw new Error(`Apple identity token verification failed: ${error.message}`);
+        }
+    }
+
+
 
 }

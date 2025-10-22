@@ -77,4 +77,24 @@ export class AuthController {
     ): Promise<LoginResponse> {
         return this.authService.loginWithNaver(accessToken);
     }
+
+    @ApiOperation({ summary: 'Login with Google' })
+    @ApiResponse({ status: 200, type: LoginResponse })
+    @HttpCode(HttpStatus.OK)
+    @Post('login/google')
+    async loginWithGoogle(
+        @Query('accessToken') accessToken: string,
+    ): Promise<LoginResponse> {
+        return this.authService.loginWithGoogle(accessToken);
+    }
+
+    @ApiOperation({ summary: 'Login with Apple' })
+    @ApiResponse({ status: 200, type: LoginResponse })
+    @HttpCode(HttpStatus.OK)
+    @Post('login/apple')
+    async loginWithApple(
+        @Body('identityToken') identityToken: string,
+    ): Promise<LoginResponse> {
+        return this.authService.loginWithApple(identityToken);
+    }
 }
