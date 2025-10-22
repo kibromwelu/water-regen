@@ -28,10 +28,16 @@ export class AuthService {
             if (existingAccount) {
                 throw new HttpException('Phone number already in use', 400)
             }
-            const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+            //const code = Math.floor(100000 + Math.random() * 900000).toString();
+            const code = '123456'; // temporary for testing
+
             let verificationRecord = await this.prisma.verificationCode.upsert({
                 where: { phoneNumber: dto.phoneNumber },
-                update: { code: code },
+                update: { 
+                    code: code, 
+                    expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes from now 
+                    },
                 create: {
                     phoneNumber: dto.phoneNumber,
                     code: code,

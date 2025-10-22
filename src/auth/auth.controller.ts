@@ -37,7 +37,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Signup user' })
     @HttpCode(HttpStatus.CREATED)
     @ApiResponse({ status: 201, type: LoginResponse })
-    @Post('signup/:id')
+    @Post('signup')
     async signup(@Body() body: SignupDto): Promise<LoginResponse> {
         return this.authService.signup(body);
     }

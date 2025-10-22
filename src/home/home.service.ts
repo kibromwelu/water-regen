@@ -18,7 +18,7 @@ import { GetHomeResponse } from './response';
 
 @Injectable()
 export class HomeService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async getHome(userId: string, dto: GetHomeDto): Promise<GetHomeResponse> {
     try {
@@ -34,7 +34,7 @@ export class HomeService {
           // only for one day
           // choose the starting date for today
           let now = new Date();
-          dto.startDate = getKoreaDate(utcToKorea(now.toString()));
+          dto.startDate = getKoreaDate(utcToKorea(now.toISOString()));
           const normalizedDate = dto.startDate.replace(/\./g, '-');
           startDate = new Date(koreaToUtc(normalizedDate));
           endDate = new Date(koreaToUtc(normalizedDate, '23:59:59.999'));
@@ -59,14 +59,14 @@ export class HomeService {
         if (dto.isHourlyView) {
           // only for one day
           let now = new Date();
-          dto.startDate = getKoreaDate(utcToKorea(now.toString()));
+          dto.startDate = getKoreaDate(utcToKorea(now.toISOString()));
           const normalizedDate = dto.startDate.replace(/\./g, '-');
           startDate = new Date(koreaToUtc(normalizedDate));
           endDate = new Date(koreaToUtc(normalizedDate, '23:59:59.999'));
         } else {
-          let now = new Date();
-          let nowDate = getKoreaDate(utcToKorea(now.toString()));
-          const normalizedDate = nowDate.replace(/\./g, '-');
+          let now = new Date().toISOString();
+          let nowDate = getKoreaDate(utcToKorea(now));
+          let normalizedDate = nowDate.replace(/\./g, '-');
           startDate = new Date(koreaToUtc(normalizedDate));
           endDate = new Date(koreaToUtc(normalizedDate, '23:59:59.999'));
 
@@ -75,44 +75,40 @@ export class HomeService {
           dto.endDate = getKoreaDate(utcToKorea(endDate));
         }
       }
+
+      // get todo list
+      todoList = await this.prisma.todo.findMany({
+        where: {
+          tank: {
+            userId: userId,
+          },
+        },
+        select: {
+          id: true,
+          message: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+
       if (dto.tankId) {
         const tank = await this.prisma.tank.findFirst({
           where: {
             id: dto.tankId,
             userId: userId,
           },
-          include: {
-            todos: {
-              select: {
-                id: true,
-                message: true,
-                createdAt: true,
-              },
-              orderBy: { createdAt: 'asc' },
-            },
-          },
         });
         if (!tank) {
           throw new NotFoundException('Tank not found');
         }
         tankId = dto.tankId;
-        todoList = tank.todos;
         tankCreationAt = tank.createdAt;
         averageBodyWeight = tank.averageBodyWeight;
+
       } else {
         const tanks = await this.prisma.tank.findMany({
           where: {
             userId: userId,
-          },
-          include: {
-            todos: {
-              select: {
-                id: true,
-                message: true,
-                createdAt: true,
-              },
-              orderBy: { createdAt: 'asc' },
-            },
           },
         });
         if (tanks.length === 0) {
@@ -129,7 +125,6 @@ export class HomeService {
           };
         }
         tankId = tanks[0].id;
-        todoList = tanks[0].todos;
         tankCreationAt = tanks[0].createdAt;
         averageBodyWeight = tanks[0].averageBodyWeight;
       }
@@ -159,10 +154,11 @@ export class HomeService {
           date: 'asc',
         },
       });
+
       // Transform the data to include only date and parameters
       const husbandryDataSummary = getHasbandryData.map((data) => ({
-        date: getKoreaDate(utcToKorea(data.date.toString())),
-        time: getKoreaHour(utcToKorea(data.date.toString())),
+        date: getKoreaDate(utcToKorea(data.date.toISOString())),
+        time: getKoreaHour(utcToKorea(data.date.toISOString())),
         ph: data.ph,
         do: data.do,
         alk: data.alk,
@@ -312,7 +308,7 @@ export class HomeService {
         isHourlyView: dto.isHourlyView ? true : false,
         doc: Math.floor(
           (new Date().getTime() - new Date(tankCreationAt).getTime()) /
-          (1000 * 60 * 60 * 24),
+            (1000 * 60 * 60 * 24),
         ), // how many days does it pass from the tank creation until now in days
         AverageBodyWeight: lastRecord?.averageBodyWeight ?? averageBodyWeight,
       };
