@@ -20,6 +20,7 @@ import {
 import { GetProfileResponse, VerifyPasswordChangeResponse } from './response';
 import axios from 'axios';
 import { SmsService } from 'src/sms/sms.service';
+import { SocialAccountProvider } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -459,9 +460,6 @@ export class UserService {
     }
   }
 
-
-
-
   private async getAppleSigningKey(kid: string): Promise<string> {
     try {
       const key = await this.jwksClient.getSigningKey(kid);
@@ -529,6 +527,27 @@ export class UserService {
       // };
     } catch (error) {
       throw new Error(`Apple identity token verification failed: ${error.message}`);
+    }
+  }
+
+  async disconnectSocialAccount(provider: SocialAccountProvider, userId: string) {
+    try {
+      const existingAccount = await this.prisma.socialAccount.findFirst({
+        where: { userId, provider },
+      });
+      if (!existingAccount) {
+        throw new NotFoundException(
+          `No linked ${provider} account found for this user`,
+        );
+      }
+
+      await this.prisma.socialAccount.delete({
+        where: { id: existingAccount.id },
+      });
+
+      return { message: `Account disconnected successfully`, provider: provider };
+    } catch (error) {
+      throw new HttpException(error.message, error.status || 500);
     }
   }
 }

@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { GetProfileResponse, VerifyPasswordChangeResponse } from './response';
+import { DisconnectSocialAccountResponse, GetProfileResponse, VerifyPasswordChangeResponse } from './response';
 import { CurrentUserId } from 'src/common/decorators';
 import { JwtGuard } from 'src/common/guards';
 import {
@@ -20,6 +20,7 @@ import {
   VerifyVerifcationCodeDto,
 } from './dto';
 import { MessageResponse } from 'src/common/response';
+import { SocialAccountProvider } from '@prisma/client';
 
 @ApiBearerAuth()
 @UseGuards(JwtGuard)
@@ -167,5 +168,17 @@ export class UserController {
     @CurrentUserId() userId: string,
   ) {
     return this.userService.connectWithApple(identityToken, userId);
+  }
+  @Post('disconnect-account')
+  @ApiOperation({ summary: 'Disconnect linked social account', description: 'Disconnect a linked social account from the user profile' })
+  @ApiResponse({ status: HttpStatus.OK, type: DisconnectSocialAccountResponse })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Linked account not found' })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized access' })
+  @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'Internal server error' })
+  async disconnectSocialAccount(
+    @Body('provider') provider: SocialAccountProvider,
+    @CurrentUserId() userId: string,
+  ): Promise<MessageResponse> {
+    return this.userService.disconnectSocialAccount(provider, userId);
   }
 }
