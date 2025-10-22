@@ -20,9 +20,9 @@ export class RecordController {
     }
 
     @Post('add-sensor-data')
-    @ApiBasicAuth() 
+    @ApiBasicAuth()
     @UseGuards(BasicAuthGuard)
-    @ApiOperation({ summary: 'Add sensor data' })
+    @ApiOperation({ summary: 'Record sensor data', description: 'Records sensor data for a tank using Basic Authentication. Use the tank owner’s username and password in the Authorization header to securely submit sensor readings.' })
     @ApiResponse({ status: 201, description: 'Sensor data added successfully.' })
     async addSensorData(@Body() dto: SensorDataDto): Promise<MessageResponse> {
         return this.recordService.addSensorHusbandryData(dto);

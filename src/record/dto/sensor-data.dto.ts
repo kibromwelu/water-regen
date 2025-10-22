@@ -8,12 +8,12 @@ export class SensorDataDto {
     @IsNotEmpty()
     tankerId: string
 
-    @ApiProperty()
+    @ApiProperty({ example: '2025-11-01T00:00:00.000Z', description: 'UTC formatted date string' })
     @IsNotEmpty()
     @Type(() => Date)
     @IsDate()
     date: Date
-    
+
     // @ApiPropertyOptional()
     // @IsOptional()
     // @IsBoolean()
