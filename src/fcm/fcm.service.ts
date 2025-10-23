@@ -6,10 +6,10 @@ import { SocketGateway } from 'src/websocket/socket.gateway';
 
 @Injectable()
 export class FcmService {
-    constructor(
-        private readonly prisma: PrismaService,
-        private readonly socketGateway: SocketGateway,
-    ) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly socketGateway: SocketGateway,
+  ) {
     // This should be initialized only once
     if (!admin.apps.length) {
       admin.initializeApp({
@@ -37,7 +37,7 @@ export class FcmService {
 
       const userExists = await this.prisma.user.findUnique({
         where: { id: userId, status: 'ACTIVE' },
-        select: { id: true }, 
+        select: { id: true },
       });
 
       if (!userExists) {
@@ -111,22 +111,22 @@ export class FcmService {
 
       const message: admin.messaging.MulticastMessage = {
         tokens: tokens.map((t) => t.token),
-        data: {...data},
+        data: { ...data },
         android: {
-            priority: androidPriority,
-            ttl,
+          priority: androidPriority,
+          ttl,
+        },
+        apns: {
+          headers: {
+            'apns-priority': apnsPriority,
+            'apns-expiration': apnsExpiration.toString(),
           },
-          apns: {
-            headers: {
-              'apns-priority': apnsPriority,
-              'apns-expiration': apnsExpiration.toString(),
-            },
-            payload: {
-              aps: {
-                alert: { title, body },
-              },
+          payload: {
+            aps: {
+              alert: { title, body },
             },
           },
+        },
       };
 
       const response = await this.getMessaging().sendEachForMulticast(message);
@@ -141,7 +141,7 @@ export class FcmService {
         });
         console.warn(`Removed ${failedTokens.length} invalid FCM tokens.`);
       }
-       return { message: 'Push notification sent successfully'  };
+      return { message: 'Push notification sent successfully' };
     } catch (error) {
       console.error('Firebase send error:', error);
       const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
@@ -149,39 +149,40 @@ export class FcmService {
     }
   }
 
-  async sendTodoNotification(data:{
+  async sendTodoNotification(data: {
     userId: string,
     tankId: string,
     tankName: string,
     todoId: string,
     message: string,
-    createdAt: Date,}
+    createdAt: Date,
+  }
   ): Promise<MessageResponse> {
     try {
       // send fcm notification
       await this.sendPushNotification({
         id: data.userId,
-        title: `Todo for Tank "${data.tankName}"`,
+        title: `긴급 작업이 있습니다`,
         body: data.message,
         priority: 'high',
       });
 
       const count = await this.prisma.todo.count({
         where: {
-          tank: {userId: data.userId},
+          tank: { userId: data.userId },
         },
       });
 
       // send web socket notification
       this.socketGateway.emitTodoToUser({
-          userId: data.userId,
-          data:{
-            id: data.todoId,
-            message: data.message,
-            createdAt: data.createdAt,
-            totalTodo: count
-          }
-        });
+        userId: data.userId,
+        data: {
+          id: data.todoId,
+          message: data.message,
+          createdAt: data.createdAt,
+          totalTodo: count
+        }
+      });
       return { message: 'Todo notification has been sent successfully' };
     } catch (error) {
       const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;

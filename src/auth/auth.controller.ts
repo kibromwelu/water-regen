@@ -1,9 +1,9 @@
 import { Body, Controller, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { CheckUsernameDto, LoginDto, RefreshTokenDto, SignupDto, VerifyCodeDto, VerifyPhoneDto } from './dto';
+import { CheckUsernameDto, LoginDto, RefreshTokenDto, ResetPasswordDto, SignupDto, VerifyCodeDto, VerifyPhoneDto } from './dto';
 import { MessageResponse } from 'src/common/response';
-import { CheckUsernameResponse, LoginResponse, VerifyCodeResponse } from './response';
+import { CheckUsernameResponse, LoginResponse, VerifyCodeResponse, VerifyFindAccountResponse } from './response';
 
 @Controller('auth')
 export class AuthController {
@@ -96,5 +96,29 @@ export class AuthController {
         @Body('identityToken') identityToken: string,
     ): Promise<LoginResponse> {
         return this.authService.loginWithApple(identityToken);
+    }
+
+    @ApiOperation({ summary: 'Find account by phone number', description: 'Initiate account recovery by sending a verification code to the provided phone number.' })
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({ status: 200, type: MessageResponse })
+    @Post('find-account')
+    async findAccount(@Body() body: VerifyPhoneDto): Promise<MessageResponse> {
+        return this.authService.findAccount(body);
+    }
+
+    @ApiOperation({ summary: 'Verify find account code', description: 'Verify the code sent for account recovery and receive a token for password reset.' })
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({ status: 200, type: VerifyFindAccountResponse })
+    @Post('verify-find-account-code')
+    async verifyFindAccountCode(@Body() body: VerifyCodeDto): Promise<VerifyFindAccountResponse> {
+        return this.authService.verifyFindAccountCode(body);
+    }
+
+    @ApiOperation({ summary: 'Reset password', description: 'Reset the user password using the provided token and new password.' })
+    @HttpCode(HttpStatus.OK)
+    @ApiResponse({ status: 200, type: LoginResponse })
+    @Post('reset-password')
+    async resetPassword(@Body() body: ResetPasswordDto): Promise<LoginResponse> {
+        return this.authService.resetPassword(body);
     }
 }

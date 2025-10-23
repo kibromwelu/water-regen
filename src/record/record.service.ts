@@ -291,7 +291,7 @@ export class RecordService {
         time: time ?? getKoreaHour(utcToKorea(lastDate)),
         averageBodyWeight: record?.averageBodyWeight ?? tank.averageBodyWeight,
         lastShrimpWeight: record?.estimatedHarvest ?? tank.numberStocked * tank.averageBodyWeight / 1000,
-        feedAdded: feedAdded / 1000,
+        feedAdded: feedAdded,
         // fcr:  0,
       }
     } catch (error) {

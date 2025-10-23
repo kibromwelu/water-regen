@@ -1,8 +1,8 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { CheckUsernameDto, LoginDto, RefreshTokenDto, SignupDto, VerifyCodeDto, VerifyPhoneDto } from './dto';
+import { CheckUsernameDto, FindAccountDto, LoginDto, RefreshTokenDto, ResetPasswordDto, SignupDto, VerifyCodeDto, VerifyPhoneDto } from './dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MessageResponse } from 'src/common/response';
-import { CheckUsernameResponse, LoginResponse, VerifyCodeResponse } from './response';
+import { CheckUsernameResponse, LoginResponse, VerifyCodeResponse, VerifyFindAccountResponse } from './response';
 import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
@@ -24,11 +24,11 @@ export class AuthService {
         private readonly smsService: SmsService,
     ) { }
 
-    async verifyPhone(dto: VerifyPhoneDto): Promise<MessageResponse> {
+    async verifyPhone(dto: VerifyPhoneDto, findAccount: boolean = false): Promise<MessageResponse> {
         // throw new Error('Method not implemented.');
         try {
             let existingAccount = await this.prisma.user.findUnique({ where: { phoneNumber: dto.phoneNumber } });
-            if (existingAccount) {
+            if (existingAccount && !findAccount) {
                 throw new HttpException('Phone number already in use', 400)
             }
 
@@ -126,6 +126,103 @@ export class AuthService {
             let tokens = await this.generateTokens(dto.id);
             return { id: dto.id, ...tokens };
 
+        } catch (error) {
+            throw new HttpException(error.message, error.status || 500);
+        }
+    }
+    async findAccount(dto: VerifyPhoneDto) {
+        try {
+            let user = await this.prisma.user.findUnique({ where: { phoneNumber: dto.phoneNumber } });
+            if (!user) {
+                throw new NotFoundException('Account not found');
+            }
+            return this.verifyPhone({ phoneNumber: dto.phoneNumber }, true);
+        } catch (error) {
+            throw new HttpException(error.message, error.status || 500);
+        }
+    }
+    async verifyFindAccountCode(body: VerifyCodeDto): Promise<VerifyFindAccountResponse> {
+        try {
+            const verificationRecord = await this.prisma.verificationCode.findUnique({
+                where: { phoneNumber: body.phoneNumber }
+            });
+
+            if (!verificationRecord) {
+                throw new BadRequestException('Invalid phone number');
+            }
+
+            if (verificationRecord.code !== body.code) {
+                throw new BadRequestException('Invalid verification code');
+            }
+
+            if (verificationRecord.expiresAt < new Date()) {
+                throw new BadRequestException('Verification code expired');
+            }
+            let user = await this.prisma.user.findUnique({ where: { phoneNumber: body.phoneNumber } });
+            if (!user) {
+                throw new NotFoundException('Account not found');
+            }
+            let passwordChangeRequest = await this.prisma.passwordChangeRequest.create({
+                data: {
+                    userId: user.id,
+
+                }
+            })
+            await this.prisma.verificationCode.delete({
+                where: { phoneNumber: body.phoneNumber }
+            });
+            return {
+                id: user.id,
+                username: user.username,
+                token: passwordChangeRequest?.id
+            }
+        } catch (error) {
+            throw new HttpException(error.message, error.status || 500);
+        }
+    }
+
+    async resetPassword(dto: ResetPasswordDto): Promise<LoginResponse> {
+        try {
+            let { token, id, password } = dto;
+            let user = await this.prisma.user.findUnique({ where: { id } });
+            if (!user) {
+                throw new BadRequestException('User not found');
+            }
+            const existingRequest = await this.prisma.passwordChangeRequest.findFirst(
+                {
+                    where: { id: token, userId: id },
+                },
+            );
+            if (!existingRequest) {
+                throw new BadRequestException('Invalid or expired token');
+            }
+            const oneHour = 60 * 60 * 1000;
+            if (existingRequest.createdAt.getTime() + oneHour < Date.now()) {
+                // delete expired token
+                await this.prisma.passwordChangeRequest.delete({
+                    where: { id: existingRequest.id },
+                });
+                throw new BadRequestException('Invalid or expired token');
+            }
+
+            // hash password
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+
+            // update user
+            await this.prisma.user.update({
+                where: { id: id },
+                data: {
+                    password: hashedPassword,
+                },
+            });
+
+            // delete the token so it can't be used again
+            await this.prisma.passwordChangeRequest.delete({
+                where: { id: existingRequest.id },
+            });
+            let tokens = await this.generateTokens(user.id);
+            return { id: user.id, ...tokens };
         } catch (error) {
             throw new HttpException(error.message, error.status || 500);
         }

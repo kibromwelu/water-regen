@@ -4,3 +4,5 @@ export * from './signup.dto';
 export * from './refresh-token.dto';
 export * from './login.dto';
 export * from './check-username.dto';
+export * from './find-account.dto';
+export * from './reset-password.dto';
