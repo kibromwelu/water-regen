@@ -23,15 +23,15 @@ export class TankController {
     return this.tankService.getAllTanks(userId);
     }
 
-    @Get('detail/:id')
-    @ApiOperation({ summary: 'Get tank detail info' })
-    @ApiResponse({ status: 200, type: GetTankDetailResponse })
-    async getTankDetail(
-    @CurrentUserId() userId: string,
-    @Param('id') id: string,
-    ): Promise<GetTankDetailResponse> {
-    return this.tankService.getTankDetail(userId, id);
-    }
+    // @Get('detail/:id')
+    // @ApiOperation({ summary: 'Get tank detail info' })
+    // @ApiResponse({ status: 200, type: GetTankDetailResponse })
+    // async getTankDetail(
+    // @CurrentUserId() userId: string,
+    // @Param('id') id: string,
+    // ): Promise<GetTankDetailResponse> {
+    // return this.tankService.getTankDetail(userId, id);
+    // }
 
     @Post('create')
     @ApiOperation({ summary: 'create tank info' })

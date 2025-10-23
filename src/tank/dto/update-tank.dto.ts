@@ -5,22 +5,22 @@ export class UpdateTankDto {
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
-  name: string;
+  name?: string;
 
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
-  whitelegShrimpStrain: string;
+  whitelegShrimpStrain?: string;
 
   @ApiPropertyOptional()
   @IsNumber()
   @IsOptional()
-  averageBodyWeight: number;
+  averageBodyWeight?: number;
 
   @ApiPropertyOptional()
   @IsNumber()
   @IsOptional()
-  numberStocked: number;
+  numberStocked?: number;
 
   @ApiPropertyOptional()
   @IsNumber()

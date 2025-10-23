@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { AlertConditionDetailResponse, ConditionsListResponse, FeedingConditionDetailResponse } from './response';
 import { AlertConditionDto, CreateFeedingConditionDto, UpdateFeedingConditionDto } from './dto';
 import { MessageResponse } from 'src/common/response';
+import { dot } from 'node:test/reporters';
 
 @Injectable()
 export class ConditionService {
@@ -16,12 +17,7 @@ export class ConditionService {
             let recurringConditionsQuery = this.prisma.recurringCondition.findMany({ select: { id: true, name: true } })
             let feedIncreaseConditionsQuery = this.prisma.feedIncreaseCondition.findMany({ select: { id: true, name: true } })
             let [feedingConditions, alertConditions, recurringConditions, feedIncreaseConditions] = await Promise.all([feedingConditionsQuery, alertConditionsQuery, recurringConditionsQuery, feedIncreaseConditionsQuery])
-            // return {
-            //     feedingConditions: feedingConditions,
-            //     alertConditions: alertConditions,
-            //     recurringConditions: recurringConditions,
-            //     feedIncreaseConditions: feedIncreaseConditions,
-            // };
+            
             return {
                 feedingConditions: feedingConditions,
                 alertConditions: alertConditions,
@@ -55,8 +51,19 @@ export class ConditionService {
         try {
             let tank = await this.prisma.tank.findUnique({ where: { id: dto.tankId } });
             if (!tank) throw new HttpException('Tank not found', 404);
+            let message;
+            //let recommendation = dto.recommendation=='Bicarbonate'? '중탄산':dto.recommendation=='Hydrated lime'? '소석회': dto.recommendation=='Vitamin'? '비타민': dto.recommendation=='Glucose'? '포도당':dto.recommendation=='Other supplements'? '기타 영양제': dto.recommendation;
+            if(dto.condition=='GTE'){
+                message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value} 이상입니다. ${dto.recommendation} 투여가 권장됩니다.`
+            }else if(dto.condition=='LTE'){
+                message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value} 이하입니다. ${dto.recommendation} 투여가 권장됩니다.`
+            }else if(dto.condition=='GT'){
+                message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value}보다 큽니다. ${dto.recommendation} 투여가 권장됩니다.`
+            }else if(dto.condition=='LT'){
+                message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value}보다 작습니다. ${dto.recommendation} 투여가 권장됩니다.`
+            }
 
-            let condition = await this.prisma.condition.create({ data: { ...dto, message: `${tank.name}의 ${dto.sensor}가 ${dto.value} 이상입니다. ${dto.recommendation} 급 이 권고`, type: 'FEEDING' } });
+            let condition = await this.prisma.condition.create({ data: { ...dto, message: message, type: 'FEEDING' } });
             console.log(condition.message);
             return { message: 'Feeding condition created' };
         } catch (error) {
@@ -77,7 +84,18 @@ export class ConditionService {
             let condition = await this.prisma.condition.findUnique({ where: { id } });
             if (!condition) throw new NotFoundException('Condition not found');
 
-            let message = `${tank.name}의 ${dto.sensor ?? condition.sensor}가 ${dto.value ?? condition.value} 이상입니다. ${dto.recommendation ?? condition.recommendation} 급 이 권고`;
+            let message;
+            //let recommendation = dto.recommendation=='Bicarbonate'? '중탄산':dto.recommendation=='Hydrated lime'? '소석회': dto.recommendation=='Vitamin'? '비타민': dto.recommendation=='Glucose'? '포도당':dto.recommendation=='Other supplements'? '기타 영양제': dto.recommendation;
+            if(dto.condition=='GTE'){
+                message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value} 이상입니다. ${dto.recommendation} 투여가 권장됩니다.`
+            }else if(dto.condition=='LTE'){
+                message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value} 이하입니다. ${dto.recommendation} 투여가 권장됩니다.`
+            }else if(dto.condition=='GT'){
+                message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value}보다 큽니다. ${dto.recommendation} 투여가 권장됩니다.`
+            }else if(dto.condition=='LT'){
+                message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value}보다 작습니다. ${dto.recommendation} 투여가 권장됩니다.`
+            }
+            //let message = `${tank.name}의 ${dto.sensor ?? condition.sensor}가 ${dto.value ?? condition.value} 이상입니다. ${dto.recommendation ?? condition.recommendation} 급 이 권고`;
             await this.prisma.condition.update({ where: { id }, data: { ...dto, message } });
             return { message: 'Feeding condition updated' };
         } catch (error) {
@@ -115,7 +133,17 @@ export class ConditionService {
         try {
             let tank = await this.prisma.tank.findUnique({ where: { id: dto.tankId } });
             if (!tank) throw new HttpException('Tank not found', 404);
-            let message = `${tank.name}의 ${dto.sensor}가 ${dto.value} 이상입니다. 즉시 확인 바랍니다.`;
+            //let message = `${tank.name}의 ${dto.sensor}가 ${dto.value} 이상입니다. 즉시 확인 바랍니다.`;
+            let message;
+            if(dto.condition=='GTE'){
+                message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value} 이상입니다. 조치가 필요합니다.`
+            }else if(dto.condition=='LTE'){
+                message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value} 이하입니다. 조치가 필요합니다.`
+            }else if(dto.condition=='GT'){
+                message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value}보다 큽니다. 조치가 필요합니다.`
+            }else if(dto.condition=='LT'){
+                message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value}보다 작습니다. 조치가 필요합니다.`
+            }
             let condition = await this.prisma.condition.create({ data: { ...dto, message, type: 'ALERT' } });
             return { message: 'Alert condition created', };
         } catch (error) {
@@ -124,10 +152,24 @@ export class ConditionService {
     }
     async updateAlertCondition(id: string, dto: AlertConditionDto) {
         try {
+            let tank = await this.prisma.tank.findUnique({ where: { id: dto.tankId } });
+            if (!tank) throw new NotFoundException('Tank not found');
+
             let condition = await this.prisma.condition.findUnique({ where: { id } });
             if (!condition) throw new NotFoundException('Condition not found');
 
-            await this.prisma.condition.update({ where: { id }, data: { ...dto } });
+            let message;
+            if(dto.condition=='GTE'){
+                message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value} 이상입니다. 조치가 필요합니다.`
+            }else if(dto.condition=='LTE'){
+                message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value} 이하입니다. 조치가 필요합니다.`
+            }else if(dto.condition=='GT'){
+                message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value}보다 큽니다. 조치가 필요합니다.`
+            }else if(dto.condition=='LT'){
+                message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value}보다 작습니다. 조치가 필요합니다.`
+            }
+
+            await this.prisma.condition.update({ where: { id }, data: { ...dto,message } });
             return { message: 'Alert condition updated' };
         } catch (error) {
             throw new HttpException(error.message, error.status || 500);

@@ -27,7 +27,7 @@ export class SmsService {
   }
 
   async sendOtpSms(phoneNumber: string, otpCode: string) {
-    console.log(`Sending OTP SMS to ${phoneNumber} with code ${otpCode}`);
+    console.log(`Sending OTP SMS`);
     // Normalize phone number to local format [01123456789] 
     const normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
     const timestamp = Date.now().toString();
@@ -60,7 +60,7 @@ export class SmsService {
         body,
         { headers },
       );
-      console.log(`SMS sent to ${normalizedPhoneNumber}: ${JSON.stringify(response.data)}`);
+      console.log(`SMS sent`);
       return { success: true, data: response.data };
     } catch (error) {
       console.log(`SMS send failed: ${error.response?.data?.message || error.message}`);

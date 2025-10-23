@@ -98,18 +98,16 @@ export class TankService {
         where: {
           userId: userId,
         },
-        select: {
-          id: true,
-          name: true,
-          tankerId: true,
-          createdAt: true,
-        },
       });
 
       let formattedTanks = tanks.map((tank) => ({
         id: tank.id,
         name: tank.name,
         tankerId: formatId(tank.tankerId),
+        whitelegShrimpStrain: tank.whitelegShrimpStrain,
+        averageBodyWeight: tank.averageBodyWeight,
+        numberStocked: tank.numberStocked,
+        salinity: tank.salinity,
         createdAt: tank.createdAt,
       }));
 

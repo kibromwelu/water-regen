@@ -109,7 +109,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Verify find account code', description: 'Verify the code sent for account recovery and receive a token for password reset.' })
     @HttpCode(HttpStatus.OK)
     @ApiResponse({ status: 200, type: VerifyFindAccountResponse })
-    @Post('verify-find-account-code')
+    @Post('verify-find-account')
     async verifyFindAccountCode(@Body() body: VerifyCodeDto): Promise<VerifyFindAccountResponse> {
         return this.authService.verifyFindAccountCode(body);
     }

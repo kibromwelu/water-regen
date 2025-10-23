@@ -32,8 +32,8 @@ export class AuthService {
                 throw new HttpException('Phone number already in use', 400)
             }
 
-            //const code = Math.floor(100000 + Math.random() * 900000).toString();
-            const code = '123456'; // temporary for testing
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            //const code = '123456'; // temporary for testing
 
             let verificationRecord = await this.prisma.verificationCode.upsert({
                 where: { phoneNumber: dto.phoneNumber },
@@ -49,7 +49,7 @@ export class AuthService {
             });
 
             // Send SMS with the code
-            //const sms = await this.smsService.sendOtpSms(dto.phoneNumber, code)
+            const sms = await this.smsService.sendOtpSms(dto.phoneNumber, code)
 
             return { message: 'Verification code sent' };
 
@@ -57,6 +57,7 @@ export class AuthService {
             throw new HttpException(error.message, error.status || 500);
         }
     }
+
     async verifyCode(body: VerifyCodeDto): Promise<VerifyCodeResponse> {
         try {
 
@@ -91,6 +92,7 @@ export class AuthService {
             throw new HttpException(error.message, error.status || 500);
         }
     }
+
     async checkUsername(dto: CheckUsernameDto): Promise<CheckUsernameResponse> {
         try {
             let existingAccount = await this.prisma.user.findUnique({ where: { username: dto.username } });
@@ -103,6 +105,7 @@ export class AuthService {
             throw new HttpException(error.message, error.status || 500);
         }
     }
+
     async signup(dto: SignupDto): Promise<LoginResponse> {
         try {
             let user = await this.prisma.user.findUnique({ where: { id: dto.id } });
@@ -130,6 +133,7 @@ export class AuthService {
             throw new HttpException(error.message, error.status || 500);
         }
     }
+
     async findAccount(dto: VerifyPhoneDto) {
         try {
             let user = await this.prisma.user.findUnique({ where: { phoneNumber: dto.phoneNumber } });
@@ -141,6 +145,7 @@ export class AuthService {
             throw new HttpException(error.message, error.status || 500);
         }
     }
+
     async verifyFindAccountCode(body: VerifyCodeDto): Promise<VerifyFindAccountResponse> {
         try {
             const verificationRecord = await this.prisma.verificationCode.findUnique({
@@ -294,6 +299,7 @@ export class AuthService {
             throw new HttpException(error.message, statusCode);
         }
     }
+
     async signToken(
         id: string,
     ): Promise<string> {
@@ -454,6 +460,7 @@ export class AuthService {
             throw new HttpException(error.message, error.status || 500);
         }
     }
+
     async loginWithGoogle(googleToken: string,): Promise<LoginResponse> {
         try {
             let token = { accessToken: '', refreshToken: '' };
