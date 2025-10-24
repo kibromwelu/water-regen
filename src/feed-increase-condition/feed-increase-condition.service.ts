@@ -170,9 +170,9 @@ export class FeedIncreaseConditionService {
             throw new HttpException(error.message, error.status || 500);
         }
     }
-    async getFeedIncreaseCondition(id: string): Promise<FeedIncreaseConditionResponse> {
+    async getFeedIncreaseCondition(id: string, userId: string): Promise<FeedIncreaseConditionResponse> {
         try {
-            let feedIncreaseCondition = await this.prisma.feedIncreaseCondition.findUnique({ where: { id }, include: { tank: true } })
+            let feedIncreaseCondition = await this.prisma.feedIncreaseCondition.findUnique({ where: { id, tank: { userId } }, include: { tank: true } })
             if (!feedIncreaseCondition) {
                 throw new NotFoundException("Condition not found")
             }

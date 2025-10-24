@@ -5,6 +5,7 @@ import { MessageResponse } from 'src/common/response';
 import { CreateFeedIncreaseConditionDto } from './dto';
 import { FeedIncreaseConditionResponse } from './response';
 import { JwtGuard } from 'src/common/guards';
+import { CurrentUserId } from 'src/common/decorators/current-user-id.decorator';
 import { ConditionData } from 'src/condition/response';
 
 @Controller('feed-increase-condition')
@@ -22,8 +23,8 @@ export class FeedIncreaseConditionController {
     @Get('/:id')
     @ApiOperation({ summary: 'Get feed increase condition detail by ID' })
     @ApiResponse({ status: 200, type: FeedIncreaseConditionResponse })
-    async getFeedIncreaseCondition(@Param('id') id: string): Promise<FeedIncreaseConditionResponse> {
-        return this.feedIncreaseConditionService.getFeedIncreaseCondition(id);
+    async getFeedIncreaseCondition(@Param('id') id: string, @CurrentUserId() userId: string): Promise<FeedIncreaseConditionResponse> {
+        return this.feedIncreaseConditionService.getFeedIncreaseCondition(id, userId);
     }
 
     @Patch('/:id')

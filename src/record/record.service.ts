@@ -63,7 +63,7 @@ export class RecordService {
   }
 
   async addHusbandryData(
-    dto: CreateHusbandryDataDto,
+    dto: CreateHusbandryDataDto, userId: string
   ): Promise<MessageResponse> {
     try {
       const {
@@ -75,7 +75,7 @@ export class RecordService {
       } = dto;
       const utcTime = koreaToUtc(date, time);
 
-      const tank = await this.prisma.tank.findUnique({ where: { id: tankId } });
+      const tank = await this.prisma.tank.findUnique({ where: { id: tankId, userId } });
       if (!tank) throw new NotFoundException('Tank not found');
 
       // Check if husbandry record exists for the date
@@ -251,11 +251,11 @@ export class RecordService {
       throw new HttpException(error.message, error.status || 500);
     }
   }
-  async getEstimatedHarvestRecord(dto: GetEstimatedRecordDto): Promise<GetEstimatedRecordResponse> {
+  async getEstimatedHarvestRecord(dto: GetEstimatedRecordDto, userId: string): Promise<GetEstimatedRecordResponse> {
     try {
       let { tankId, startDate, endDate, time } = dto;
       let beginningDate, lastDate;
-      let tank = await this.prisma.tank.findUnique({ where: { id: tankId } });
+      let tank = await this.prisma.tank.findUnique({ where: { id: tankId, userId } });
       if (!tank) {
         throw new HttpException('Tank not found', 404);
       }
@@ -299,9 +299,13 @@ export class RecordService {
     }
   }
 
-  async calculateEstimatedHarvest(dto: CreateEstimatedHarvestDto): Promise<CreateEstimatedRecordResponse> {
+  async calculateEstimatedHarvest(dto: CreateEstimatedHarvestDto, userId: string): Promise<CreateEstimatedRecordResponse> {
     try {
       let { tankId, lastShrimpWeight, averageBodyWeight, feedAdded, fcr, endDate, startDate, time } = dto
+      let tank = await this.prisma.tank.findUnique({ where: { id: tankId, userId } });
+      if (!tank) {
+        throw new HttpException('Tank not found', 404);
+      }
       let estimatedHarvest = lastShrimpWeight + (feedAdded / fcr);
       let estimatedCount = Math.round((estimatedHarvest * 1000) / averageBodyWeight);
       let record = await this.prisma.record.create({
