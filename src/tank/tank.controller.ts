@@ -35,22 +35,22 @@ export class TankController {
 
     @Post('create')
     @ApiOperation({ summary: 'create tank info' })
-    @ApiResponse({ status: 201, type: MessageResponse })
+    @ApiResponse({ status: 201, type: GetTanksListResponse })
     async createTank(
     @CurrentUserId() userId: string,
     @Body() dto: CreateTankDto,
-    ): Promise<MessageResponse> {
+    ): Promise<GetTanksListResponse> {
     return this.tankService.createTank(userId, dto);
     }
 
     @Patch('update/:id')
     @ApiOperation({ summary: 'update tank info' })
-    @ApiResponse({ status: 200, type: MessageResponse })
+    @ApiResponse({ status: 200, type: GetTanksListResponse })
     async updateTank(
     @CurrentUserId() userId: string,
     @Param('id') id: string,
     @Body() dto: UpdateTankDto,
-    ): Promise<MessageResponse> {
+    ): Promise<GetTanksListResponse> {
     return this.tankService.updateTank(userId, id ,dto);
     }
 

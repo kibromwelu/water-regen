@@ -1,11 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger"
 
-class ConditionData {
+export class ConditionData {
     @ApiProperty()
     id: string
     @ApiProperty()
     name: string
 }
+
 export class ConditionsListResponse {
     @ApiProperty({ type: [ConditionData] })
     feedingConditions: ConditionData[]

@@ -10,6 +10,12 @@ class TankInfo {
   name: string;
 }
 
+export enum EndType {
+  DATE = 'DATE',
+  COUNT = 'COUNT',
+  NONE = 'NONE',
+}
+
 export class GetRecurringConditionDetailResponse {
   @ApiProperty()
   name: string;
@@ -32,4 +38,8 @@ export class GetRecurringConditionDetailResponse {
 
   @ApiProperty()
   message: string;
+
+  @ApiProperty({ enum: EndType })
+  @IsEnum(EndType)
+  endType: EndType;
 }

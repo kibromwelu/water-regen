@@ -102,7 +102,7 @@ export class UserService {
       }
 
       const code = Math.floor(100000 + Math.random() * 900000).toString();
-      //const code = '123456'; // temporary for testing
+      // const code = '123456'; // temporary for testing
 
       // save verification code
       const verification = await this.prisma.verificationCode.upsert({

@@ -18,6 +18,7 @@ import {
   UpdateRecurringConditionDto,
 } from './dto';
 import { JwtGuard } from 'src/common/guards';
+import { ConditionData } from 'src/condition/response';
 
 @ApiBearerAuth()
 @UseGuards(JwtGuard)
@@ -42,22 +43,22 @@ export class RecurringConditionController {
 
   @Post('create')
   @ApiOperation({ summary: 'create recurring condition info' })
-  @ApiResponse({ status: 201, type: MessageResponse })
+  @ApiResponse({ status: 201, type: ConditionData })
   async createRecurringCondition(
     @CurrentUserId() userId: string,
     @Body() dto: CreateRecurringConditionDto,
-  ): Promise<MessageResponse> {
+  ): Promise<ConditionData> {
     return this.recurringConditionService.createRecurringCondition(userId, dto);
   }
 
   @Patch('update/:id')
   @ApiOperation({ summary: 'update recurring condition info' })
-  @ApiResponse({ status: 200, type: MessageResponse })
+  @ApiResponse({ status: 200, type: ConditionData })
   async updateRecurringCondition(
     @CurrentUserId() userId: string,
     @Param('id') id: string,
-    @Body() dto: UpdateRecurringConditionDto,
-  ): Promise<MessageResponse> {
+    @Body() dto: CreateRecurringConditionDto,
+  ): Promise<ConditionData> {
     return this.recurringConditionService.updateRecurringCondition(
       userId,
       id,

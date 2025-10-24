@@ -1,6 +1,6 @@
 import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { AlertConditionDetailResponse, ConditionsListResponse, FeedingConditionDetailResponse } from './response';
+import { AlertConditionDetailResponse, ConditionData, ConditionsListResponse, FeedingConditionDetailResponse } from './response';
 import { AlertConditionDto, CreateFeedingConditionDto, UpdateFeedingConditionDto } from './dto';
 import { MessageResponse } from 'src/common/response';
 import { dot } from 'node:test/reporters';
@@ -47,7 +47,7 @@ export class ConditionService {
             throw new HttpException(error.message, error.status || 500);
         }
     }
-    async createFeedingCondition(dto: CreateFeedingConditionDto): Promise<MessageResponse> {
+    async createFeedingCondition(dto: CreateFeedingConditionDto): Promise<ConditionData> {
         try {
             let tank = await this.prisma.tank.findUnique({ where: { id: dto.tankId } });
             if (!tank) throw new HttpException('Tank not found', 404);
@@ -65,12 +65,15 @@ export class ConditionService {
 
             let condition = await this.prisma.condition.create({ data: { ...dto, message: message, type: 'FEEDING' } });
             console.log(condition.message);
-            return { message: 'Feeding condition created' };
+            return { 
+                id: condition.id,
+                name: condition.name
+             };
         } catch (error) {
             throw new HttpException(error.message, error.status || 500);
         }
     }
-    async updateFeedingCondition(id: string, dto: UpdateFeedingConditionDto): Promise<MessageResponse> {
+    async updateFeedingCondition(id: string, dto: UpdateFeedingConditionDto): Promise<ConditionData> {
         try {
 
             if (!dto.tankId) {
@@ -96,8 +99,11 @@ export class ConditionService {
                 message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value}보다 작습니다. ${dto.recommendation} 투여가 권장됩니다.`
             }
             //let message = `${tank.name}의 ${dto.sensor ?? condition.sensor}가 ${dto.value ?? condition.value} 이상입니다. ${dto.recommendation ?? condition.recommendation} 급 이 권고`;
-            await this.prisma.condition.update({ where: { id }, data: { ...dto, message } });
-            return { message: 'Feeding condition updated' };
+            const updateCondition = await this.prisma.condition.update({ where: { id }, data: { ...dto, message } });
+            return { 
+                id: updateCondition.id,
+                name: updateCondition.name
+             };
         } catch (error) {
             throw new HttpException(error.message, error.status || 500);
         }
@@ -129,7 +135,7 @@ export class ConditionService {
             throw new HttpException(error.message, error.status || 500);
         }
     }
-    async createAlertCondition(dto: AlertConditionDto): Promise<MessageResponse> {
+    async createAlertCondition(dto: AlertConditionDto): Promise<ConditionData> {
         try {
             let tank = await this.prisma.tank.findUnique({ where: { id: dto.tankId } });
             if (!tank) throw new HttpException('Tank not found', 404);
@@ -145,12 +151,15 @@ export class ConditionService {
                 message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value}보다 작습니다. 조치가 필요합니다.`
             }
             let condition = await this.prisma.condition.create({ data: { ...dto, message, type: 'ALERT' } });
-            return { message: 'Alert condition created', };
+            return { 
+                id: condition.id,
+                name: condition.name
+             };
         } catch (error) {
             throw new HttpException(error.message, error.status || 500);
         }
     }
-    async updateAlertCondition(id: string, dto: AlertConditionDto) {
+    async updateAlertCondition(id: string, dto: AlertConditionDto): Promise<ConditionData> {
         try {
             let tank = await this.prisma.tank.findUnique({ where: { id: dto.tankId } });
             if (!tank) throw new NotFoundException('Tank not found');
@@ -169,8 +178,11 @@ export class ConditionService {
                 message = `${tank.name}의 ${dto.sensor=='WATER_TEMPERATURE'? '수온':dto.sensor}(이)가 ${dto.value}보다 작습니다. 조치가 필요합니다.`
             }
 
-            await this.prisma.condition.update({ where: { id }, data: { ...dto,message } });
-            return { message: 'Alert condition updated' };
+            const updateCondition = await this.prisma.condition.update({ where: { id }, data: { ...dto,message } });
+            return { 
+                id: updateCondition.id,
+                name: updateCondition.name
+             };
         } catch (error) {
             throw new HttpException(error.message, error.status || 500);
         }

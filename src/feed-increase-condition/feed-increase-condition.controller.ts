@@ -5,6 +5,7 @@ import { MessageResponse } from 'src/common/response';
 import { CreateFeedIncreaseConditionDto } from './dto';
 import { FeedIncreaseConditionResponse } from './response';
 import { JwtGuard } from 'src/common/guards';
+import { ConditionData } from 'src/condition/response';
 
 @Controller('feed-increase-condition')
 @ApiBearerAuth()
@@ -14,8 +15,8 @@ export class FeedIncreaseConditionController {
 
     @Post('/create')
     @ApiOperation({ summary: 'Create feed increase condition' })
-    @ApiResponse({ status: 201, description: 'Feed increase condition created successfully.' })
-    async createFeedIncreaseCondition(@Body() dto: CreateFeedIncreaseConditionDto): Promise<MessageResponse> {
+    @ApiResponse({ status: 201, type: ConditionData, description: 'Feed increase condition created successfully.' })
+    async createFeedIncreaseCondition(@Body() dto: CreateFeedIncreaseConditionDto): Promise<ConditionData> {
         return this.feedIncreaseConditionService.createFeedIncreaseCondition(dto);
     }
     @Get('/:id')
@@ -27,11 +28,11 @@ export class FeedIncreaseConditionController {
 
     @Patch('/:id')
     @ApiOperation({ summary: 'Update feed increase condition by ID' })
-    @ApiResponse({ status: 200, type: MessageResponse })
+    @ApiResponse({ status: 200, type: ConditionData })
     async updateFeedIncreaseCondition(
         @Param('id') id: string,
         @Body() dto: CreateFeedIncreaseConditionDto
-    ): Promise<MessageResponse> {
+    ): Promise<ConditionData> {
         return this.feedIncreaseConditionService.updateFeedIncreaseCondition(id, dto);
     }
 

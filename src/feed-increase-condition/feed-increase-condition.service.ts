@@ -11,6 +11,7 @@ import { CreateFeedIncreaseConditionDto } from './dto';
 import { MessageResponse } from 'src/common/response';
 import { FeedIncreaseConditionResponse } from './response';
 import { getKoreaDate, koreaToUtc, utcToKorea } from 'src/common/utils';
+import { ConditionData } from 'src/condition/response';
 
 @Injectable()
 export class FeedIncreaseConditionService {
@@ -18,7 +19,7 @@ export class FeedIncreaseConditionService {
 
     async createFeedIncreaseCondition(
         dto: CreateFeedIncreaseConditionDto,
-    ): Promise<MessageResponse> {
+    ): Promise<ConditionData> {
         try {
             const { name, tankId, referenceTime } = dto;
             console.log(referenceTime);
@@ -76,7 +77,7 @@ export class FeedIncreaseConditionService {
             dailyExpectedFeedAmount = dailyExpectedFeedAmount + 0.1 * dailyExpectedFeedAmount
 
             //  Create the condition
-            await this.prisma.feedIncreaseCondition.create({
+            const condition = await this.prisma.feedIncreaseCondition.create({
                 data: {
                     name,
                     tankId,
@@ -87,13 +88,16 @@ export class FeedIncreaseConditionService {
                 },
             });
 
-            return { message: 'Feed increase condition created successfully' };
+            return { 
+                id: condition.id,
+                name: condition.name
+             };
         } catch (error) {
             throw new HttpException(error.message, error.status || 500);
         }
     }
 
-    async updateFeedIncreaseCondition(id: string, dto: CreateFeedIncreaseConditionDto) {
+    async updateFeedIncreaseCondition(id: string, dto: CreateFeedIncreaseConditionDto): Promise<ConditionData> {
         try {
             const { name, tankId, referenceTime } = dto;
 
@@ -148,7 +152,7 @@ export class FeedIncreaseConditionService {
             dailyExpectedFeedAmount = dailyExpectedFeedAmount + 0.1 * dailyExpectedFeedAmount
 
             // 4️⃣ Create the condition
-            await this.prisma.feedIncreaseCondition.update({
+            const condition = await this.prisma.feedIncreaseCondition.update({
                 where: { id },
                 data: {
                     name,
@@ -158,7 +162,10 @@ export class FeedIncreaseConditionService {
                 },
             });
 
-            return { message: 'Feed increase condition updated successfully' };
+            return { 
+                id: condition.id,
+                name: condition.name
+             };
         } catch (error) {
             throw new HttpException(error.message, error.status || 500);
         }

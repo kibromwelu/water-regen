@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ConditionService } from './condition.service';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { ConditionsListResponse, FeedingConditionDetailResponse } from './response';
+import { ConditionData, ConditionsListResponse, FeedingConditionDetailResponse } from './response';
 import { AlertConditionDto, CreateFeedingConditionDto, UpdateFeedingConditionDto } from './dto';
 import { MessageResponse } from 'src/common/response';
 import { JwtGuard } from 'src/common/guards';
@@ -31,14 +31,15 @@ export class ConditionController {
     }
     @Post('/feeding-condition')
     @ApiOperation({ summary: 'Create feeding condition' })
-    @ApiResponse({ status: 201, type: MessageResponse })
-    async createFeedingCondition(@Body() dto: CreateFeedingConditionDto): Promise<MessageResponse> {
+    @ApiResponse({ status: 201, type: ConditionData })
+    async createFeedingCondition(@Body() dto: CreateFeedingConditionDto): Promise<ConditionData> {
         return this.conditionService.createFeedingCondition(dto);
     }
 
     @Patch('/feeding-condition/:id')
     @ApiOperation({ summary: 'Update feeding condition by ID' })
-    async updateFeedingCondition(@Param('id') id: string, @Body() dto: UpdateFeedingConditionDto): Promise<MessageResponse> {
+    @ApiResponse({ status: 200, type: ConditionData })
+    async updateFeedingCondition(@Param('id') id: string, @Body() dto: UpdateFeedingConditionDto): Promise<ConditionData> {
         return this.conditionService.updateFeedingCondition(id, dto);
     }
 
@@ -57,13 +58,14 @@ export class ConditionController {
     }
     @Post('/alert-condition')
     @ApiOperation({ summary: 'Create alert condition' })
-    @ApiResponse({ status: 201, type: MessageResponse })
-    async createAlertCondition(@Body() dto: AlertConditionDto) {
+    @ApiResponse({ status: 201, type: ConditionData })
+    async createAlertCondition(@Body() dto: AlertConditionDto): Promise<ConditionData> {
         return this.conditionService.createAlertCondition(dto);
     }
     @Patch('/alert-condition/:id')
     @ApiOperation({ summary: 'Update alert condition by ID' })
-    async updateAlertCondition(@Param('id') id: string, @Body() dto: AlertConditionDto) {
+    @ApiResponse({ status: 200, type: ConditionData })
+    async updateAlertCondition(@Param('id') id: string, @Body() dto: AlertConditionDto): Promise<ConditionData> {
         return this.conditionService.updateAlertCondition(id, dto);
     }
     @Delete('/alert-condition/:id')

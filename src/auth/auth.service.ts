@@ -33,7 +33,7 @@ export class AuthService {
             }
 
             const code = Math.floor(100000 + Math.random() * 900000).toString();
-            //const code = '123456'; // temporary for testing
+            // const code = '123456'; // temporary for testing
 
             let verificationRecord = await this.prisma.verificationCode.upsert({
                 where: { phoneNumber: dto.phoneNumber },

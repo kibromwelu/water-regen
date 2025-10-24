@@ -18,7 +18,7 @@ export class TankService {
   async createTank(
     userId: string,
     dto: CreateTankDto,
-  ): Promise<MessageResponse> {
+  ): Promise<GetTanksListResponse> {
     try {
       const newTank = await this.prisma.tank.create({
         data: {
@@ -44,7 +44,14 @@ export class TankService {
       });
 
       return {
-        message: 'Tank created successfully',
+        id: newTank.id,
+        name: newTank.name,
+        tankerId: formatId(newTank.tankerId),
+        whitelegShrimpStrain: newTank.whitelegShrimpStrain,
+        averageBodyWeight: newTank.averageBodyWeight,
+        numberStocked: newTank.numberStocked,
+        salinity: newTank.salinity,
+        createdAt: newTank.createdAt,
       };
     } catch (error) {
       // Handle any errors
@@ -57,7 +64,7 @@ export class TankService {
     userId: string,
     id: string,
     dto: UpdateTankDto,
-  ): Promise<MessageResponse> {
+  ): Promise<GetTanksListResponse> {
     try {
       const existingTank = await this.prisma.tank.findFirst({
         where: {
@@ -83,7 +90,14 @@ export class TankService {
       });
 
       return {
-        message: 'Tank Updated successfully',
+        id: newTank.id,
+        name: newTank.name,
+        tankerId: formatId(newTank.tankerId),
+        whitelegShrimpStrain: newTank.whitelegShrimpStrain,
+        averageBodyWeight: newTank.averageBodyWeight,
+        numberStocked: newTank.numberStocked,
+        salinity: newTank.salinity,
+        createdAt: newTank.createdAt,
       };
     } catch (error) {
       // Handle any errors

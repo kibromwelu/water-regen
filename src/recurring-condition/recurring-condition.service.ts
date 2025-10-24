@@ -11,9 +11,10 @@ import {
   UpdateRecurringConditionDto,
 } from './dto';
 import { MessageResponse } from 'src/common/response';
-import { GetRecurringConditionDetailResponse } from './response';
+import { EndType, GetRecurringConditionDetailResponse } from './response';
 import { getKoreaDate, koreaToUtc, utcToKorea } from 'src/common/utils';
 import { FcmService } from 'src/fcm/fcm.service';
+import { ConditionData } from 'src/condition/response';
 
 @Injectable()
 export class RecurringConditionService {
@@ -25,8 +26,13 @@ export class RecurringConditionService {
   async createRecurringCondition(
     userId: string,
     dto: CreateRecurringConditionDto,
-  ): Promise<MessageResponse> {
+  ): Promise<ConditionData> {
     try {
+      if(dto.endDate && dto.endingCount){
+        // only accept endDate if both are provided
+        dto.endingCount = undefined;
+      }
+      
       let utcDate;
       if (dto.endDate) {
         utcDate = koreaToUtc(dto.endDate);
@@ -46,20 +52,19 @@ export class RecurringConditionService {
       const { newRecurringCondition, todo } = await this.prisma.$transaction(
         async (tx) => {
           // create a recurring condition
-          const newRecurringCondition =
-            await tx.recurringCondition.create({
-              data: {
-                tankId: dto.tankId,
-                name: dto.name,
-                intervalType: dto.intervalType,
-                intervalValue: dto.intervalValue,
-                endDate: utcDate || undefined,
-                endingCount: dto.endingCount || undefined,
-                message: dto.message,
-                lastMessageSent: new Date(),
-                totalMessageSent: 1,
-              },
-            });
+          const newRecurringCondition = await tx.recurringCondition.create({
+            data: {
+              tankId: dto.tankId,
+              name: dto.name,
+              intervalType: dto.intervalType,
+              intervalValue: dto.intervalValue,
+              endDate: utcDate || undefined,
+              endingCount: dto.endingCount || undefined,
+              message: dto.message,
+              lastMessageSent: new Date(),
+              totalMessageSent: 1,
+            },
+          });
 
           // create a todo list
           const todo = await tx.todo.create({
@@ -76,18 +81,19 @@ export class RecurringConditionService {
 
       // Todo: send fcm notification
       if (todo) {
-          await this.fcmService.sendTodoNotification({
-            userId: todo.tank.userId,
-            tankId: todo.tankId,
-            tankName: todo.tank.name,
-            todoId: todo.id,
-            message: todo.message,
-            createdAt: todo.createdAt,
-          });
-        }
+        await this.fcmService.sendTodoNotification({
+          userId: todo.tank.userId,
+          tankId: todo.tankId,
+          tankName: todo.tank.name,
+          todoId: todo.id,
+          message: todo.message,
+          createdAt: todo.createdAt,
+        });
+      }
 
       return {
-        message: 'Recurring condition created successfully',
+        id: newRecurringCondition.id,
+        name: newRecurringCondition.name,
       };
     } catch (error) {
       // Handle any errors
@@ -99,9 +105,14 @@ export class RecurringConditionService {
   async updateRecurringCondition(
     userId: string,
     id: string,
-    dto: UpdateRecurringConditionDto,
-  ): Promise<MessageResponse> {
+    dto: CreateRecurringConditionDto,
+  ): Promise<ConditionData> {
     try {
+      if(dto.endDate && dto.endingCount){
+        // only accept endDate if both are provided
+        dto.endingCount = undefined;
+      }
+      
       let utcDate;
       if (dto.endDate) {
         utcDate = koreaToUtc(dto.endDate);
@@ -139,14 +150,15 @@ export class RecurringConditionService {
             name: dto.name || undefined,
             intervalType: dto.intervalType || undefined,
             intervalValue: dto.intervalValue || undefined,
-            endDate: utcDate || undefined,
-            endingCount: dto.endingCount || undefined,
+            endDate: utcDate || null,
+            endingCount: dto.endingCount || null,
             message: dto.message,
           },
         });
 
       return {
-        message: 'Recurring condition updated successfully',
+        id: updateRecurringCondition.id,
+        name: updateRecurringCondition.name,
       };
     } catch (error) {
       // Handle any errors
@@ -183,7 +195,7 @@ export class RecurringConditionService {
       if (!existingRecurringCondition) {
         throw new NotFoundException('Recurring condition not found');
       }
-      
+
       return {
         ...existingRecurringCondition,
         endDate: existingRecurringCondition.endDate
@@ -191,6 +203,7 @@ export class RecurringConditionService {
               utcToKorea(existingRecurringCondition.endDate.toString()),
             )
           : null,
+        endType: existingRecurringCondition.endDate? EndType.DATE : existingRecurringCondition.endingCount ? EndType.COUNT : EndType.NONE,
       };
     } catch (error) {
       // Handle any errors
