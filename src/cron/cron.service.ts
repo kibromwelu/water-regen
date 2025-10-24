@@ -1,7 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
-import { getKoreaHour, utcToKorea } from 'src/common/utils';
+import {
+  getKoreaDate,
+  getKoreaHour,
+  koreaToUtc,
+  utcToKorea,
+} from 'src/common/utils';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { addDays, addWeeks, addMonths, addYears, isAfter } from 'date-fns';
 import { FcmService } from 'src/fcm/fcm.service';
@@ -18,7 +23,7 @@ export class CronService {
   @Cron(CronExpression.EVERY_HOUR)
   async checkFeedingAlerts() {
     const currentHour = new Date();
-    let currentKoreaTime = utcToKorea(currentHour.toString());
+    let currentKoreaTime = utcToKorea(currentHour.toISOString());
     let currentKoreaHour = getKoreaHour(currentKoreaTime);
     console.log('Current Korea Hour:', currentKoreaHour);
     const feedConditions = await this.prisma.feedIncreaseCondition.findMany({
@@ -39,12 +44,16 @@ export class CronService {
       console.log('Feeding hours:', feedingHours);
       let updatedFeed;
       if (currentKoreaHour === refHour) {
-        console.log(
-          currentKoreaHour,
-          'is reference hour. Skipping increase logic.',
+        let now = new Date();
+        let koreanTime = utcToKorea(now.toISOString());
+        console.log('Korean Time at refHour:', koreanTime);
+        let yesterdayEnd = koreaToUtc(
+          getKoreaDate(koreanTime),
+          feed.referenceTime,
         );
-        const yesterdayStart = startOfDay(subDays(new Date(), 1));
-        const yesterdayEnd = endOfDay(subDays(new Date(), 1));
+        console.log('UTC Time at refHour:', yesterdayEnd);
+        let yesterdayStart = subDays(yesterdayEnd, 1);
+        console.log('Yesterday UTC Time at refHour:', yesterdayStart);
 
         // Sum up all feed records for yesterday for this tank
         let actualUsedYesterday = 0;
@@ -71,25 +80,11 @@ export class CronService {
           newFeedAmount = feed.expectedFeedAmount * 1.1;
         }
 
-        updatedFeed = await this.prisma.feedIncreaseCondition.update({
-          where: { id: feed.id },
-          data: {
-            expectedFeedAmount: newFeedAmount,
-            dailyMessageSentCount: 0,
-            lastMessageSent: new Date(),
-          },
-        });
-
-        continue; // move to next tank
-      }
-
-      // --- 2️⃣ Handle feeding alert times ---
-      if (feedingHours.includes(currentKoreaHour)) {
         // Prevent duplicate alerts within the same hour
         let lastMessageSentInKoreaHour;
         if (feed.lastMessageSent) {
           lastMessageSentInKoreaHour = utcToKorea(
-            feed.lastMessageSent?.toString(),
+            feed.lastMessageSent?.toISOString(),
           );
         }
         console.log('Last message sent hour:', lastMessageSentInKoreaHour);
@@ -98,6 +93,41 @@ export class CronService {
           lastMessageSentHour = getKoreaHour(lastMessageSentInKoreaHour);
         }
         if (!feed.lastMessageSent || lastMessageSentHour !== currentKoreaHour) {
+          updatedFeed = await this.prisma.feedIncreaseCondition.update({
+            where: { id: feed.id },
+            data: {
+              expectedFeedAmount: newFeedAmount,
+              dailyMessageSentCount: 0,
+              lastMessageSent: new Date(),
+            },
+          });
+        }
+        //continue; // move to next tank
+      }
+
+      // --- 2️⃣ Handle feeding alert times ---
+      if (feedingHours.includes(currentKoreaHour)) {
+        // Prevent duplicate alerts within the same hour
+        let lastMessageSentInKoreaHour;
+        if (feed.lastMessageSent) {
+          lastMessageSentInKoreaHour = utcToKorea(
+            feed.lastMessageSent?.toISOString(),
+          );
+        }
+        console.log('Last message sent hour:', lastMessageSentInKoreaHour);
+        let lastMessageSentHour;
+        if (lastMessageSentInKoreaHour) {
+          lastMessageSentHour = getKoreaHour(lastMessageSentInKoreaHour);
+        }
+        if (!feed.lastMessageSent || lastMessageSentHour !== currentKoreaHour) {
+          const feedPerTime = updatedFeed
+            ? updatedFeed.expectedFeedAmount / 4
+            : feed.expectedFeedAmount / 4;
+
+          if (feedPerTime <= 0) {
+            console.log('Feed per time is zero or negative, skipping alert.');
+            continue;
+          }
           const { newTodo, feedIncreaseCondition } =
             await this.prisma.$transaction(async (tx) => {
               const feedIncreaseCondition =
@@ -110,14 +140,11 @@ export class CronService {
                   },
                 });
 
-              const feedPerTime = updatedFeed.expectedFeedAmount / 4;
-              console.log('feed per time:', feedPerTime);
-              
               const newTodo = await tx.todo.create({
                 data: {
                   tankId: feed.tankId,
                   type: 'FEEDING_INCREASE',
-                  message: `${feed.tank.name}에 사료 ${feedPerTime.toFixed(2)}kg을 추가해주세요.`
+                  message: `${feed.tank.name}에 사료 ${feedPerTime.toFixed(2)}kg을 추가해주세요.`,
                 },
                 include: { tank: true },
               });

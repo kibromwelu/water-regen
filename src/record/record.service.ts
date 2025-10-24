@@ -2,11 +2,10 @@ import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateEstimatedHarvestDto, CreateHusbandryDataDto, GetEstimatedRecordDto, SensorDataDto } from './dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MessageResponse } from 'src/common/response';
-import { getKoreaHour, getRealId, koreaToUtc, utcToKorea } from 'src/common/utils';
+import { getKoreaDate, getKoreaHour, getRealId, koreaToUtc, utcToKorea } from 'src/common/utils';
 import { SensorType } from '@prisma/client';
 import { FcmService } from 'src/fcm/fcm.service';
 import { CreateEstimatedRecordResponse, GetEstimatedRecordResponse } from './response';
-import { last } from 'rxjs';
 
 @Injectable()
 export class RecordService {
@@ -246,7 +245,7 @@ export class RecordService {
         ]);
       }
 
-      return { message: 'husbandry data added successfully' };
+      return { message: 'Sensor data added successfully' };
     } catch (error) {
       throw new HttpException(error.message, error.status || 500);
     }
@@ -286,8 +285,8 @@ export class RecordService {
 
       return {
         tankId: tankId,
-        startDate: utcToKorea(beginningDate),
-        endDate: utcToKorea(lastDate),
+        startDate: getKoreaDate(utcToKorea(beginningDate)),
+        endDate: getKoreaDate(utcToKorea(lastDate)),
         time: time ?? getKoreaHour(utcToKorea(lastDate)),
         averageBodyWeight: record?.averageBodyWeight ?? tank.averageBodyWeight,
         lastShrimpWeight: record?.estimatedHarvest ?? tank.numberStocked * tank.averageBodyWeight / 1000,

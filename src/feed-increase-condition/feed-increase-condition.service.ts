@@ -5,7 +5,7 @@ import {
     HttpException,
 } from '@nestjs/common';
 
-import { subHours } from 'date-fns';
+import { subDays, subHours } from 'date-fns';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateFeedIncreaseConditionDto } from './dto';
 import { MessageResponse } from 'src/common/response';
@@ -43,21 +43,12 @@ export class FeedIncreaseConditionService {
             //  Compute daily expected feed amount based on previous 24 hours
             // const refHour = parseInt(referenceTime);
             const now = new Date();
-            let koreanTime = utcToKorea(now.toString());
-            console.log("Korean Time:", koreanTime)
-            // let ;
+            let koreanTime = utcToKorea(now.toISOString());
+            console.log("Korean Time at refHour:", koreanTime)
             let refDateTime = koreaToUtc(getKoreaDate(koreanTime), referenceTime)
-            // const refDateTime = new Date(
-            //     now.getFullYear(),
-            //     now.getMonth(),
-            //     now.getDate(),
-            //     refHour,
-            //     0,
-            //     0,
-            // );
-            console.log("Reference DateTime:", refDateTime);
-            // Fetch records within 24 hours before reference time
-            const startTime = subHours(refDateTime, 24);
+            console.log("UTC Time at refHour:", refDateTime)
+            let startTime = subDays(refDateTime, 1);
+            console.log("Yesterday UTC Time at refHour:", startTime)
 
             const previousFeedRecords = await this.prisma.feedingData.findMany({
                 where: {
@@ -71,10 +62,10 @@ export class FeedIncreaseConditionService {
             if (previousFeedRecords.length > 0) {
                 const amounts = previousFeedRecords.map((r) => r.amount);
                 const totalOfRecords = amounts.reduce((a, b) => a + b, 0);
-                const maxAmount = Math.max(...amounts);
-                dailyExpectedFeedAmount = Math.max(totalOfRecords, 4 * maxAmount);
+                //const maxAmount = Math.max(...amounts);
+                dailyExpectedFeedAmount = totalOfRecords //Math.max(totalOfRecords, 4 * maxAmount);
             }
-            dailyExpectedFeedAmount = dailyExpectedFeedAmount + 0.1 * dailyExpectedFeedAmount
+            dailyExpectedFeedAmount = dailyExpectedFeedAmount * 1.1 //* dailyExpectedFeedAmount
 
             //  Create the condition
             const condition = await this.prisma.feedIncreaseCondition.create({
@@ -121,18 +112,12 @@ export class FeedIncreaseConditionService {
             const refHour = parseInt(referenceTime);
             const now = new Date();
 
-            // Go back to the last reference time (approximate)
-            const refDateTime = new Date(
-                now.getFullYear(),
-                now.getMonth(),
-                now.getDate(),
-                refHour,
-                0,
-                0,
-            );
-
-            // Fetch records within 24 hours before reference time
-            const startTime = subHours(refDateTime, 24);
+            let koreanTime = utcToKorea(now.toISOString());
+            console.log("Korean Time at refHour:", koreanTime)
+            let refDateTime = koreaToUtc(getKoreaDate(koreanTime), referenceTime)
+            console.log("UTC Time at refHour:", refDateTime)
+            let startTime = subDays(refDateTime, 1);
+            console.log("Yesterday UTC Time at refHour:", startTime)
 
             const previousFeedRecords = await this.prisma.feedingData.findMany({
                 where: {
@@ -146,10 +131,10 @@ export class FeedIncreaseConditionService {
             if (previousFeedRecords.length > 0) {
                 const amounts = previousFeedRecords.map((r) => r.amount);
                 const totalOfRecords = amounts.reduce((a, b) => a + b, 0);
-                const maxAmount = Math.max(...amounts);
-                dailyExpectedFeedAmount = Math.max(totalOfRecords, 4 * maxAmount);
+               // const maxAmount = Math.max(...amounts);
+                dailyExpectedFeedAmount = totalOfRecords
             }
-            dailyExpectedFeedAmount = dailyExpectedFeedAmount + 0.1 * dailyExpectedFeedAmount
+            dailyExpectedFeedAmount = dailyExpectedFeedAmount * 1.1 
 
             // 4️⃣ Create the condition
             const condition = await this.prisma.feedIncreaseCondition.update({
