@@ -15,6 +15,6 @@ export class GetEstimatedRecordResponse {
     lastShrimpWeight: number;
     @ApiProperty()
     feedAdded: number;
-    // @ApiProperty()
-    // fcr: number;
+    @ApiProperty()
+    doc: number;
 }
