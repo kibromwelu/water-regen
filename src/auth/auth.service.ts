@@ -32,8 +32,8 @@ export class AuthService {
                 throw new HttpException('Phone number already in use', 400)
             }
 
-            const code = Math.floor(100000 + Math.random() * 900000).toString();
-            // const code = '123456'; // temporary for testing
+            // const code = Math.floor(100000 + Math.random() * 900000).toString();
+            const code = '123456'; // temporary for testing
 
             let verificationRecord = await this.prisma.verificationCode.upsert({
                 where: { phoneNumber: dto.phoneNumber },
@@ -49,7 +49,7 @@ export class AuthService {
             });
 
             // Send SMS with the code
-            const sms = await this.smsService.sendOtpSms(dto.phoneNumber, code)
+            // const sms = await this.smsService.sendOtpSms(dto.phoneNumber, code)
 
             return { message: 'Verification code sent' };
 
