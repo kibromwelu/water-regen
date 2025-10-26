@@ -1,4 +1,16 @@
 services:
+  nginx:
+    image: nginx:1.15-alpine
+    restart: unless-stopped
+    volumes:
+      - ./dev/nginx:/etc/nginx/conf.d
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    ports:
+      - "80:80"
+      - "443:443"
+    command: '/bin/sh -c ''while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g "daemon off;"'''
+
   app: 
     container_name: water-regen-app
     build:
@@ -11,6 +23,7 @@ services:
     depends_on:
       - db
     command: ["/bin/sh", "-c", "npx prisma db push && npx prisma generate && npm run start:prod"]
+
   db:
     image: postgres:17
     environment:
