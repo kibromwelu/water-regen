@@ -79,7 +79,7 @@ export class HomeService {
           startDate = new Date(koreaToUtc(normalizedDate));
           endDate = now;
 
-          startDate.setDate(startDate.getDate() - 7); // default to last 7 days
+          startDate.setDate(startDate.getDate() - 6); // default to last 6 days
           dto.startDate = getKoreaDate(utcToKorea(startDate.toISOString()));
           dto.endDate = getKoreaDate(utcToKorea(endDate.toISOString()));
         }
@@ -155,7 +155,7 @@ export class HomeService {
           startDate = new Date(koreaToUtc(normalizedDate));
           endDate = now;
 
-          startDate.setDate(startDate.getDate() - 7); // default to last 7 days
+          startDate.setDate(startDate.getDate() - 6); // default to last 6 days
           dto.startDate = getKoreaDate(utcToKorea(startDate.toISOString()));
           dto.endDate = getKoreaDate(utcToKorea(endDate.toISOString()));
         }
