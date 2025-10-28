@@ -22,7 +22,7 @@ services:
     env_file: .env
     depends_on:
       - db
-    command: ["/bin/sh", "-c", "npx prisma db push && npx prisma generate && npm run start:prod"]
+    command: ["/bin/sh", "-c", "npx prisma migrate deploy && npx prisma generate && npm run start:prod"]
 
   db:
     image: postgres:17
