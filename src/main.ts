@@ -9,8 +9,8 @@ async function bootstrap() {
   app.enableCors();
 
   const config = new DocumentBuilder()
-    .setTitle('Water Regen')
-    .setDescription('Endpoints for Water Regen’s app.')
+    .setTitle('WaterRegen')
+    .setDescription('Endpoints for WaterRegen’s app.')
     .setVersion('1.0')
     .addBearerAuth()
     .addBasicAuth() 

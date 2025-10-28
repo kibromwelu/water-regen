@@ -106,7 +106,7 @@ export class UserController {
     description: 'Internal server error',
   })
   async connectKakao(
-    @Query('Authorization') token: string,
+    @Query('accessToken') token: string,
     @CurrentUserId() userId: string,
   ) {
     return await this.userService.linkKakao(token, userId);
@@ -129,7 +129,7 @@ export class UserController {
     description: 'Unauthorized access',
   })
   async connectNaver(
-    @Query('Authorization') token: string,
+    @Query('accessToken') token: string,
     @CurrentUserId() userId: string,
   ) {
     return this.userService.linkNaver(token, userId);
@@ -152,11 +152,12 @@ export class UserController {
     description: 'Unauthorized access',
   })
   async linkGoogle(
-    @Query('Authorization') token: string,
+    @Query('accessToken') token: string,
     @CurrentUserId() userId: string,
   ) {
     return this.userService.linkGoogle(token, userId);
   }
+
   @Post('link-apple')
   @ApiOperation({ summary: 'Connect Apple account' })
   @ApiResponse({ status: HttpStatus.OK, type: MessageResponse })
@@ -164,11 +165,12 @@ export class UserController {
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized access' })
   @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'Internal server error' })
   async connectApple(
-    @Body('identityToken') identityToken: string,
+    @Query('identityToken') identityToken: string,
     @CurrentUserId() userId: string,
   ) {
     return this.userService.connectWithApple(identityToken, userId);
   }
+  
   @Post('disconnect-account')
   @ApiOperation({ summary: 'Disconnect linked social account', description: 'Disconnect a linked social account from the user profile' })
   @ApiResponse({ status: HttpStatus.OK, type: DisconnectSocialAccountResponse })

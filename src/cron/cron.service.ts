@@ -174,6 +174,12 @@ export class CronService {
 
     // Fetch all active recurring conditions
     const recurringConditions = await this.prisma.recurringCondition.findMany({
+      where: {
+        OR: [
+          { endDate: null },
+          { endDate: { gt: now } },
+        ],
+      },
       include: {
         tank: true,
       },
