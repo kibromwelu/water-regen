@@ -452,11 +452,9 @@ export class UserService {
 
       return { message: 'Google account connected successfully' };
     } catch (error) {
-      console.error('Google linking error:', error.message);
-      throw new HttpException(
-        error.response?.data?.error_description || error.message,
-        error.response?.status || 500,
-      );
+      // Handle any errors
+      const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      throw new HttpException(error.message, statusCode);
     }
   }
 
@@ -526,7 +524,10 @@ export class UserService {
       //   is_private_email: verifiedToken.is_private_email === 'true' || verifiedToken.is_private_email === true,
       // };
     } catch (error) {
-      throw new Error(`Apple identity token verification failed: ${error.message}`);
+      //throw new Error(`Apple identity token verification failed: ${error.message}`);
+      // Handle any errors
+      const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      throw new HttpException(error.message, statusCode);
     }
   }
 
