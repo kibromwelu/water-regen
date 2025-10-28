@@ -302,7 +302,7 @@ export class UserService {
       const accessToken = token?.replace('Bearer ', '');
       // console.log("Access token: ", accessToken);
       if (!accessToken) {
-        throw new UnauthorizedException('Access token required');
+        throw new BadRequestException('Access token required');
       }
       let user = await this.prisma.user.findUnique({ where: { id: userId } });
       if (!user) {
@@ -352,7 +352,7 @@ export class UserService {
       const accessToken = token?.replace('Bearer ', '');
       // console.log(accessToken);
       if (!accessToken) {
-        throw new UnauthorizedException('Access token required');
+        throw new BadRequestException('Access token required');
       }
       let localUser = await this.prisma.user.findUnique({
         where: { id: userId },
@@ -408,7 +408,7 @@ export class UserService {
     try {
       const accessToken = token?.replace('Bearer ', '');
       if (!accessToken) {
-        throw new UnauthorizedException('Access token is required');
+        throw new BadRequestException('Access token is required');
       }
 
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -425,7 +425,7 @@ export class UserService {
       );
       const { sub: providerId, email } = googleResponse.data;
       if (!providerId) {
-        throw new UnauthorizedException('Invalid Google token');
+        throw new BadRequestException('Invalid Google token');
       }
 
       const existingAccount = await this.prisma.socialAccount.findFirst({
@@ -452,11 +452,9 @@ export class UserService {
 
       return { message: 'Google account connected successfully' };
     } catch (error) {
-      console.error('Google linking error:', error.message);
-      throw new HttpException(
-        error.response?.data?.error_description || error.message,
-        error.response?.status || 500,
-      );
+      // Handle any errors
+      const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      throw new HttpException(error.message, statusCode);
     }
   }
 
@@ -526,7 +524,10 @@ export class UserService {
       //   is_private_email: verifiedToken.is_private_email === 'true' || verifiedToken.is_private_email === true,
       // };
     } catch (error) {
-      throw new Error(`Apple identity token verification failed: ${error.message}`);
+      //throw new Error(`Apple identity token verification failed: ${error.message}`);
+      // Handle any errors
+      const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      throw new HttpException(error.message, statusCode);
     }
   }
 

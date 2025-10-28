@@ -313,7 +313,7 @@ export class RecordService {
         let now = new Date().toISOString();
         let nowDate = getKoreaDate(utcToKorea(now));
         beginningDate = new Date(koreaToUtc(nowDate));
-        beginningDate.setDate(beginningDate.getDate() - 7);
+        beginningDate.setDate(beginningDate.getDate() - 6);
         lastDate = new Date();
       }
 

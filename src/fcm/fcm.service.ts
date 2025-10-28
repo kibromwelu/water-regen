@@ -111,6 +111,7 @@ export class FcmService {
 
       const message: admin.messaging.MulticastMessage = {
         tokens: tokens.map((t) => t.token),
+        notification: { title, body },
         data: { ...data },
         android: {
           priority: androidPriority,
@@ -154,11 +155,13 @@ export class FcmService {
     tankId: string,
     tankName: string,
     todoId: string,
-    message: string,
-    createdAt: Date,
+    message: string | null,
+    createdAt: Date | null,
+    deleted?: boolean,
   }
   ): Promise<MessageResponse> {
     try {
+      if(!data.deleted && data.message){
       // send fcm notification
       await this.sendPushNotification({
         id: data.userId,
@@ -166,6 +169,7 @@ export class FcmService {
         body: data.message,
         priority: 'high',
       });
+    }
 
       const count = await this.prisma.todo.count({
         where: {
@@ -180,7 +184,8 @@ export class FcmService {
           id: data.todoId,
           message: data.message,
           createdAt: data.createdAt,
-          totalTodo: count
+          totalTodo: count,
+          flag: data.deleted ? 'DELETE' : 'CREATE',
         }
       });
       return { message: 'Todo notification has been sent successfully' };

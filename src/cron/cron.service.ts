@@ -18,7 +18,7 @@ export class CronService {
   constructor(
     private prisma: PrismaService,
     private fcmService: FcmService,
-  ) {}
+  ) { }
 
   @Cron(CronExpression.EVERY_HOUR)
   async checkFeedingAlerts() {
@@ -61,8 +61,9 @@ export class CronService {
           where: {
             husbandryData: {
               tankId: feed.tankId,
+              date: { gte: yesterdayStart, lte: yesterdayEnd }
             },
-            createdAt: { gte: yesterdayStart, lte: yesterdayEnd },
+            //createdAt: { gte: yesterdayStart, lte: yesterdayEnd },
           },
         });
 
@@ -174,6 +175,12 @@ export class CronService {
 
     // Fetch all active recurring conditions
     const recurringConditions = await this.prisma.recurringCondition.findMany({
+      where: {
+        OR: [
+          { endDate: null },
+          { endDate: { gt: now } },
+        ],
+      },
       include: {
         tank: true,
       },

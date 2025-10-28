@@ -93,7 +93,7 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @Post('login/apple')
     async loginWithApple(
-        @Body('identityToken') identityToken: string,
+        @Query('identityToken') identityToken: string,
     ): Promise<LoginResponse> {
         return this.authService.loginWithApple(identityToken);
     }

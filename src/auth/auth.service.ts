@@ -27,7 +27,7 @@ export class AuthService {
     async verifyPhone(dto: VerifyPhoneDto, findAccount: boolean = false): Promise<MessageResponse> {
         // throw new Error('Method not implemented.');
         try {
-            let existingAccount = await this.prisma.user.findUnique({ where: { phoneNumber: dto.phoneNumber } });
+            let existingAccount = await this.prisma.user.findUnique({ where: { phoneNumber: dto.phoneNumber, status:'ACTIVE' } });
             if (existingAccount && !findAccount) {
                 throw new HttpException('Phone number already in use', 400)
             }
@@ -77,10 +77,17 @@ export class AuthService {
                 throw new BadRequestException('Verification code expired');
             }
 
-            let user = await this.prisma.user.create({
-                data: {
+            const existingAccount = await this.prisma.user.findUnique({ where: { phoneNumber: body.phoneNumber } });
+            if (existingAccount && existingAccount.status == 'ACTIVE') {
+                throw new BadRequestException('Phone number already in use');
+            }
+
+            let user = await this.prisma.user.upsert({
+                where: { phoneNumber: body.phoneNumber },
+                create: {
                     phoneNumber: body.phoneNumber
-                }
+                },
+                update: {}
             });
             await this.prisma.verificationCode.delete({
                 where: { phoneNumber: body.phoneNumber }
@@ -136,7 +143,7 @@ export class AuthService {
 
     async findAccount(dto: VerifyPhoneDto) {
         try {
-            let user = await this.prisma.user.findUnique({ where: { phoneNumber: dto.phoneNumber } });
+            let user = await this.prisma.user.findUnique({ where: { phoneNumber: dto.phoneNumber, status:'ACTIVE' } });
             if (!user) {
                 throw new NotFoundException('Account not found');
             }
@@ -163,7 +170,7 @@ export class AuthService {
             if (verificationRecord.expiresAt < new Date()) {
                 throw new BadRequestException('Verification code expired');
             }
-            let user = await this.prisma.user.findUnique({ where: { phoneNumber: body.phoneNumber } });
+            let user = await this.prisma.user.findUnique({ where: { phoneNumber: body.phoneNumber, status:'ACTIVE' } });
             if (!user) {
                 throw new NotFoundException('Account not found');
             }
@@ -236,7 +243,7 @@ export class AuthService {
     async login(dto: LoginDto): Promise<LoginResponse> {
         try {
             let { username, password } = dto;
-            let user = await this.prisma.user.findFirst({ where: { OR: [{ username }, { phoneNumber: username }] } });
+            let user = await this.prisma.user.findFirst({ where: { status:'ACTIVE', OR: [{ username }, { phoneNumber: username }] } });
             if (!user) {
                 throw new BadRequestException('User not found');
             }
