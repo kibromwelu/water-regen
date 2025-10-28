@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { DisconnectSocialAccountResponse, GetProfileResponse, VerifyPasswordChangeResponse } from './response';
 import { CurrentUserId } from 'src/common/decorators';
 import { JwtGuard } from 'src/common/guards';
@@ -173,12 +173,13 @@ export class UserController {
   
   @Post('disconnect-account')
   @ApiOperation({ summary: 'Disconnect linked social account', description: 'Disconnect a linked social account from the user profile' })
+  @ApiQuery({ name: 'provider', enum: SocialAccountProvider, description: 'The social account provider to disconnect' })
   @ApiResponse({ status: HttpStatus.OK, type: DisconnectSocialAccountResponse })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Linked account not found' })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized access' })
   @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'Internal server error' })
   async disconnectSocialAccount(
-    @Body('provider') provider: SocialAccountProvider,
+    @Query('provider') provider: SocialAccountProvider,
     @CurrentUserId() userId: string,
   ): Promise<MessageResponse> {
     return this.userService.disconnectSocialAccount(provider, userId);
