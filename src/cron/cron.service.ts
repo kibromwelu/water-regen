@@ -20,7 +20,7 @@ export class CronService {
     private fcmService: FcmService,
   ) { }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_HOUR)
   async checkFeedingAlerts() {
     const currentHour = new Date();
     let currentKoreaTime = utcToKorea(currentHour.toISOString());
@@ -61,8 +61,9 @@ export class CronService {
           where: {
             husbandryData: {
               tankId: feed.tankId,
+              date: { gte: yesterdayStart, lte: yesterdayEnd }
             },
-            createdAt: { gte: yesterdayStart, lte: yesterdayEnd },
+            //createdAt: { gte: yesterdayStart, lte: yesterdayEnd },
           },
         });
 

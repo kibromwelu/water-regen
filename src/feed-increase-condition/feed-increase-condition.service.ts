@@ -33,19 +33,16 @@ export class FeedIncreaseConditionService {
             // const refHour = parseInt(referenceTime);
             const now = new Date();
             let koreanTime = utcToKorea(now.toISOString());
-            console.log("Korean Time at refHour:", koreanTime)
             let refDateTime = koreaToUtc(getKoreaDate(koreanTime), referenceTime)
-            console.log("UTC Time at refHour:", refDateTime)
             let startTime = subDays(refDateTime, 1);
-            console.log("Yesterday UTC Time at refHour:", startTime)
 
             const previousFeedRecords = await this.prisma.feedingData.findMany({
                 where: {
-                    husbandryData: { tankId },
-                    createdAt: { gte: startTime, lt: refDateTime },
+                    husbandryData: { tankId, date:{ gte: startTime, lt: refDateTime } },
+                    //createdAt: { gte: startTime, lt: refDateTime },
                 }
             });
-
+            
             let dailyExpectedFeedAmount = 0;
 
             if (previousFeedRecords.length > 0) {
@@ -55,7 +52,7 @@ export class FeedIncreaseConditionService {
                 dailyExpectedFeedAmount = totalOfRecords //Math.max(totalOfRecords, 4 * maxAmount);
             }
             dailyExpectedFeedAmount = dailyExpectedFeedAmount * 1.1 //* dailyExpectedFeedAmount
-
+            
             //  Create the condition
             const condition = await this.prisma.feedIncreaseCondition.create({
                 data: {
@@ -81,7 +78,7 @@ export class FeedIncreaseConditionService {
         try {
             const { name, tankId, referenceTime } = dto;
 
-            // 1️⃣ Ensure condition exists
+            // Ensure condition exists
             const existingCondition =
                 await this.prisma.feedIncreaseCondition.findUnique({
                     where: { id },
@@ -91,27 +88,24 @@ export class FeedIncreaseConditionService {
                 throw new NotFoundException("Condition not found");
             }
 
-            // 2️⃣ Ensure tank exists
+            // Ensure tank exists
             const tank = await this.prisma.tank.findUnique({
                 where: { id: tankId },
             });
             if (!tank) throw new NotFoundException('Tank not found');
 
-            // 3️⃣ Compute daily expected feed amount based on previous 24 hours
+            // Compute daily expected feed amount based on previous 24 hours
             const refHour = parseInt(referenceTime);
             const now = new Date();
 
             let koreanTime = utcToKorea(now.toISOString());
-            console.log("Korean Time at refHour:", koreanTime)
             let refDateTime = koreaToUtc(getKoreaDate(koreanTime), referenceTime)
-            console.log("UTC Time at refHour:", refDateTime)
             let startTime = subDays(refDateTime, 1);
-            console.log("Yesterday UTC Time at refHour:", startTime)
 
             const previousFeedRecords = await this.prisma.feedingData.findMany({
                 where: {
-                    husbandryData: { tankId },
-                    createdAt: { gte: startTime, lt: refDateTime },
+                    husbandryData: { tankId, date: { gte: startTime, lt: refDateTime } },
+                    //createdAt: { gte: startTime, lt: refDateTime },
                 }
             });
 
@@ -125,7 +119,7 @@ export class FeedIncreaseConditionService {
             }
             dailyExpectedFeedAmount = dailyExpectedFeedAmount * 1.1
 
-            // 4️⃣ Create the condition
+            // Create the condition
             const condition = await this.prisma.feedIncreaseCondition.update({
                 where: { id },
                 data: {
@@ -144,6 +138,7 @@ export class FeedIncreaseConditionService {
             throw new HttpException(error.message, error.status || 500);
         }
     }
+
     async getFeedIncreaseCondition(id: string, userId: string): Promise<FeedIncreaseConditionResponse> {
         try {
             let feedIncreaseCondition = await this.prisma.feedIncreaseCondition.findUnique({ where: { id, tank: { userId } }, include: { tank: true } })
@@ -160,6 +155,7 @@ export class FeedIncreaseConditionService {
             throw new HttpException(error.message, error.status || 500)
         }
     }
+
     async deleteFeedIncrease(id: string): Promise<MessageResponse> {
         try {
             let condition = await this.prisma.feedIncreaseCondition.findUnique({ where: { id } });
