@@ -18,9 +18,9 @@ export class CronService {
   constructor(
     private prisma: PrismaService,
     private fcmService: FcmService,
-  ) {}
+  ) { }
 
-  @Cron(CronExpression.EVERY_HOUR)
+  @Cron(CronExpression.EVERY_MINUTE)
   async checkFeedingAlerts() {
     const currentHour = new Date();
     let currentKoreaTime = utcToKorea(currentHour.toISOString());

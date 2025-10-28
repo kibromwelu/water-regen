@@ -85,14 +85,14 @@ model Tank {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime? @updatedAt
 
-  userId                String
-  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  husbandryData         HusbandryData[]
-  conditions            Condition[]
-  recurringConditions   RecurringCondition[]
-  feedIncreaseCondition FeedIncreaseCondition?
-  todos                 Todo[]
-  records               Record[]
+  userId                 String
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  husbandryData          HusbandryData[]
+  conditions             Condition[]
+  recurringConditions    RecurringCondition[]
+  feedIncreaseConditions FeedIncreaseCondition[]
+  todos                  Todo[]
+  records                Record[]
 }
 
 model HusbandryData {
@@ -183,7 +183,7 @@ model FeedIncreaseCondition {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime? @updatedAt
 
-  tankId String @unique
+  tankId String
   tank   Tank   @relation(fields: [tankId], references: [id], onDelete: Cascade)
 }
 

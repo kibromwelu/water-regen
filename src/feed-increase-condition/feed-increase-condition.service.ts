@@ -23,18 +23,7 @@ export class FeedIncreaseConditionService {
         try {
             const { name, tankId, referenceTime } = dto;
             console.log(referenceTime);
-            //  Ensure no existing condition for this tank
-            const existingCondition =
-                await this.prisma.feedIncreaseCondition.findUnique({
-                    where: { tankId },
-                });
-
-            if (existingCondition) {
-                throw new BadRequestException(
-                    'There is already an associated condition for this tank',
-                );
-            }
-
+            //  Ensure tank exists
             const tank = await this.prisma.tank.findUnique({
                 where: { id: tankId },
             });
@@ -79,10 +68,10 @@ export class FeedIncreaseConditionService {
                 },
             });
 
-            return { 
+            return {
                 id: condition.id,
                 name: condition.name
-             };
+            };
         } catch (error) {
             throw new HttpException(error.message, error.status || 500);
         }
@@ -131,10 +120,10 @@ export class FeedIncreaseConditionService {
             if (previousFeedRecords.length > 0) {
                 const amounts = previousFeedRecords.map((r) => r.amount);
                 const totalOfRecords = amounts.reduce((a, b) => a + b, 0);
-               // const maxAmount = Math.max(...amounts);
+                // const maxAmount = Math.max(...amounts);
                 dailyExpectedFeedAmount = totalOfRecords
             }
-            dailyExpectedFeedAmount = dailyExpectedFeedAmount * 1.1 
+            dailyExpectedFeedAmount = dailyExpectedFeedAmount * 1.1
 
             // 4️⃣ Create the condition
             const condition = await this.prisma.feedIncreaseCondition.update({
@@ -147,10 +136,10 @@ export class FeedIncreaseConditionService {
                 },
             });
 
-            return { 
+            return {
                 id: condition.id,
                 name: condition.name
-             };
+            };
         } catch (error) {
             throw new HttpException(error.message, error.status || 500);
         }
