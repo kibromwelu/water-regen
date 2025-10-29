@@ -376,7 +376,7 @@ export class AuthService {
             let token = { accessToken: '', refreshToken: '' };
             const accessToken = kakaoToken?.replace('Bearer ', '');
             if (!accessToken) {
-                throw new UnauthorizedException('Please provide kakao access token');
+                throw new BadRequestException('Please provide kakao access token');
             }
             const kakaoUser = await axios.get('https://kapi.kakao.com/v2/user/me', {
                 headers: { Authorization: `Bearer ${accessToken}` },
@@ -425,7 +425,7 @@ export class AuthService {
             const accessToken = naverToken?.replace('Bearer ', '');
             // console.log(accessToken);
             if (!accessToken) {
-                throw new UnauthorizedException('Access token required');
+                throw new BadRequestException('Access token required');
             }
             const userResponse = await axios.get(
                 'https://openapi.naver.com/v1/nid/me',
@@ -441,7 +441,7 @@ export class AuthService {
             }
             const { response: user } = userResponse.data;
             const id = user.id;
-            console.log('User naver id: ', user.id, id);
+            
             let localUser = await this.prisma.user.findFirst({
                 where: {
                     socialAccount: {
@@ -473,7 +473,7 @@ export class AuthService {
             let token = { accessToken: '', refreshToken: '' };
             const googleAccessToken = googleToken?.replace('Bearer ', '');
             if (!googleAccessToken) {
-                throw new UnauthorizedException('Access token is required');
+                throw new BadRequestException('Access token is required');
             }
 
 
@@ -484,16 +484,17 @@ export class AuthService {
                     headers: { Authorization: `Bearer ${googleAccessToken}` },
                 },
             );
-            const { sub: providerId, email } = googleResponse.data;
+            
+            const { sub: providerId } = googleResponse.data;
             if (!providerId) {
-                throw new UnauthorizedException('Invalid Google token');
+                throw new BadRequestException('Invalid Google token');
             }
             let localUser = await this.prisma.user.findFirst({
                 where: {
                     socialAccount: {
                         some: {
                             providerId: providerId,
-                            provider: 'APPLE',
+                            provider: 'GOOGLE',
                         },
                     },
                 },
@@ -510,11 +511,8 @@ export class AuthService {
                 id: localUser.id
             };
         } catch (error) {
-            console.error('Google linking error:', error.message);
-            throw new HttpException(
-                error.response?.data?.error_description || error.message,
-                error.response?.status || 500,
-            );
+            console.log('Google sso login:', error.message);
+            throw new HttpException(error.message, error.status || 500);
         }
     }
 
