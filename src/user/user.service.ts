@@ -14,6 +14,7 @@ import * as jwksClient from 'jwks-rsa';
 
 import {
   ChangePasswordDto,
+  LogoutDto,
   SendVerficationCodeDto,
   VerifyVerifcationCodeDto,
 } from './dto';
@@ -290,6 +291,36 @@ export class UserService {
       return {
         message: 'Account has been deleted.',
       };
+    } catch (error) {
+      // Handle any errors
+      const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      throw new HttpException(error.message, statusCode);
+    }
+  }
+
+  async logout(
+    id: string,
+    dto: LogoutDto
+  ): Promise<MessageResponse> {
+    try {
+      console.log("logout", id ,dto.fcmToken, );
+      
+      const existingUser = await this.prisma.user.findFirst({
+        where: { id },
+      });
+      if (!existingUser) {
+        throw new HttpException('User not found', HttpStatus.BAD_REQUEST);
+      }
+
+
+      const deleted = await this.prisma.fcmToken.deleteMany({
+        where: {
+          userId: id,
+          token: dto.fcmToken,
+        },
+      });
+
+      return { message: 'Account has been deleted.' };
     } catch (error) {
       // Handle any errors
       const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;

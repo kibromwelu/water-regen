@@ -13,7 +13,7 @@ import { formatId } from 'src/common/utils';
 
 @Injectable()
 export class TankService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async createTank(
     userId: string,
@@ -28,18 +28,32 @@ export class TankService {
           averageBodyWeight: dto.averageBodyWeight,
           numberStocked: dto.numberStocked,
           salinity: dto.salinity || undefined,
-          husbandryData: {
-            create: {
-              date: new Date(),
-              waterTemperature: dto.waterTemperature || undefined,
-              do: dto.do || undefined,
-              ph: dto.ph || undefined,
-              nh4: dto.nh4 || undefined,
-              no2: dto.no2 || undefined,
-              alk: dto.alk || undefined,
-              salinity: dto.salinity || undefined,
-            },
-          },
+          // husbandryData: {
+          //   create: {
+          //     date: new Date(),
+          //     waterTemperature: dto.waterTemperature || undefined,
+          //     do: dto.do || undefined,
+          //     ph: dto.ph || undefined,
+          //     nh4: dto.nh4 || undefined,
+          //     no2: dto.no2 || undefined,
+          //     alk: dto.alk || undefined,
+          //     salinity: dto.salinity || undefined,
+          //   },
+          // },
+        },
+      });
+
+      const createdHusbandryData = await this.prisma.husbandryData.create({
+        data: {
+          tankId: newTank.id,
+          date: newTank.createdAt,
+          waterTemperature: dto.waterTemperature || undefined,
+          do: dto.do || undefined,
+          ph: dto.ph || undefined,
+          nh4: dto.nh4 || undefined,
+          no2: dto.no2 || undefined,
+          alk: dto.alk || undefined,
+          salinity: dto.salinity || undefined,
         },
       });
 
@@ -83,11 +97,23 @@ export class TankService {
         data: {
           name: dto.name || undefined,
           whitelegShrimpStrain: dto.whitelegShrimpStrain || undefined,
-          averageBodyWeight: dto.averageBodyWeight || undefined,
-          numberStocked: dto.numberStocked || undefined,
-          salinity: dto.salinity || undefined,
+          // averageBodyWeight: dto.averageBodyWeight || undefined,
+          // numberStocked: dto.numberStocked || undefined,
+          salinity: dto.salinity || null,
+        },
+        include: {
+          husbandryData: { take: 1, orderBy: { date: 'asc' },}
         },
       });
+
+      if(newTank.husbandryData.length ===0){
+        await this.prisma.husbandryData.update({
+          where: { id: newTank.husbandryData[0].id },
+          data: {
+            salinity: dto.salinity || null,
+          },
+        });
+      }
 
       return {
         id: newTank.id,
@@ -112,6 +138,7 @@ export class TankService {
         where: {
           userId: userId,
         },
+        orderBy: { createdAt: 'asc' },
       });
 
       let formattedTanks = tanks.map((tank) => ({
@@ -155,7 +182,7 @@ export class TankService {
         whitelegShrimpStrain: existingTank.whitelegShrimpStrain,
         averageBodyWeight: existingTank.averageBodyWeight,
         numberStocked: existingTank.numberStocked,
-        salinity: existingTank.salinity
+        salinity: existingTank.salinity,
       };
     } catch (error) {
       // Handle any errors

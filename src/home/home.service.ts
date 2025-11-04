@@ -437,7 +437,7 @@ export class HomeService {
         todo: todoList,
         data: summaryData,
         startDate: dto.startDate,
-        endDate: dto.endDate ? dto.endDate : null,
+        endDate: dto.endDate ? dto.endDate==dto.startDate? null: dto.endDate : null,
         isHourlyView: dto.isHourlyView ? true : false,
         doc: Math.floor(
           (new Date().getTime() - new Date(tankCreationAt).getTime()) /

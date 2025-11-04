@@ -5,8 +5,8 @@ export class GetEstimatedRecordResponse {
     tankId: string;
     @ApiProperty()
     startDate: string;
-    @ApiProperty()
-    endDate: string;
+    @ApiProperty({type: String})
+    endDate: string | null;
     @ApiProperty()
     time: string;
     @ApiProperty()

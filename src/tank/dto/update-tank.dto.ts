@@ -1,26 +1,26 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateTankDto {
-  @ApiPropertyOptional()
+  @ApiProperty()
   @IsString()
-  @IsOptional()
-  name?: string;
+  @IsNotEmpty()
+  name: string;
 
-  @ApiPropertyOptional()
+  @ApiProperty()
   @IsString()
-  @IsOptional()
-  whitelegShrimpStrain?: string;
+  @IsNotEmpty()
+  whitelegShrimpStrain: string;
 
-  @ApiPropertyOptional()
-  @IsNumber()
-  @IsOptional()
-  averageBodyWeight?: number;
+  // @ApiProperty()
+  // @IsNumber()
+  // @IsNotEmpty()
+  // averageBodyWeight: number;
 
-  @ApiPropertyOptional()
-  @IsNumber()
-  @IsOptional()
-  numberStocked?: number;
+  // @ApiProperty()
+  // @IsNumber()
+  // @IsNotEmpty()
+  // numberStocked: number;
 
   @ApiPropertyOptional()
   @IsNumber()

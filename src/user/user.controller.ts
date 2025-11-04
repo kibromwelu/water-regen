@@ -16,6 +16,7 @@ import { CurrentUserId } from 'src/common/decorators';
 import { JwtGuard } from 'src/common/guards';
 import {
   ChangePasswordDto,
+  LogoutDto,
   SendVerficationCodeDto,
   VerifyVerifcationCodeDto,
 } from './dto';
@@ -86,6 +87,26 @@ export class UserController {
   @ApiResponse({ status: 200, type: MessageResponse })
   async deleteUser(@CurrentUserId() userId: string): Promise<MessageResponse> {
     return this.userService.deleteUser(userId);
+  }
+
+  @Post('logout')
+  @ApiOperation({
+    summary: 'Logout user account',
+  })
+  @ApiResponse({ status: 200, type: MessageResponse })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized, Token expired or Invalid token',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'User Not Found',
+  })
+  async logout(
+    @CurrentUserId() userId: string,
+    @Body() dto: LogoutDto
+  ): Promise<MessageResponse> {
+    return this.userService.logout(userId, dto);
   }
 
   @Post('/link-kakao')

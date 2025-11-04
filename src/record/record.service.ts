@@ -347,10 +347,12 @@ export class RecordService {
         return sum + dailyFeed;
       }, 0);
 
+      let koreaStartDate = getKoreaDate(utcToKorea(beginningDate.toISOString()))
+      let koreaEndDate = getKoreaDate(utcToKorea(lastDate.toISOString()))
       return {
         tankId: tankId,
-        startDate: getKoreaDate(utcToKorea(beginningDate.toISOString())),
-        endDate: getKoreaDate(utcToKorea(lastDate.toISOString())),
+        startDate: koreaStartDate,
+        endDate: koreaEndDate,
         time:
           time ??
           getKoreaHour(utcToKorea(lastDate.toISOString()))
