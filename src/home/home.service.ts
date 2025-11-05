@@ -43,6 +43,9 @@ export class HomeService {
       let averageBodyWeight: number;
       let todayLastHour: number = 0;
 
+      // Helper function to round to 2 decimal places
+      const roundToFloat = (value: number) => Math.round(value * 100) / 100;
+
       // Date handling
       if (dto.startDate && dto.endDate) {
         if (dto.isHourlyView) {
@@ -60,6 +63,9 @@ export class HomeService {
           endDate = new Date(koreaToUtc(normalizedDate, '23:59:59.999'));
         }
       } else if (dto.startDate && !dto.endDate) {
+        // set isHourlyView to true if only startDate is provided
+        dto.isHourlyView = true;
+        // only for one day
         startDate = new Date(koreaToUtc(dto.startDate));
 
         //const normalizedDate = dto.startDate.replace(/\./g, '-');
@@ -164,6 +170,11 @@ export class HomeService {
       if (startDate < tankCreationAt) {
         startDate = tankCreationAt;
         dto.startDate = getKoreaDate(utcToKorea(tankCreationAt.toISOString()));
+      }
+
+      // if the startDate and endDate are the same day, set isHourlyView to true
+      if(dto.startDate === dto.endDate){
+        dto.isHourlyView = true;
       }
 
       // Adjust todayLastHour for hourly view
@@ -283,43 +294,43 @@ export class HomeService {
           time: hour.time,
           ph:
             groupedData[hour.time]?.count > 0
-              ? Math.round(
+              ? roundToFloat(
                   groupedData[hour.time].ph / groupedData[hour.time].count,
                 )
               : 0,
           do:
             groupedData[hour.time]?.count > 0
-              ? Math.round(
+              ? roundToFloat(
                   groupedData[hour.time].do / groupedData[hour.time].count,
                 )
               : 0,
           alk:
             groupedData[hour.time]?.count > 0
-              ? Math.round(
+              ? roundToFloat(
                   groupedData[hour.time].alk / groupedData[hour.time].count,
                 )
               : 0,
           nh4:
             groupedData[hour.time]?.count > 0
-              ? Math.round(
+              ? roundToFloat(
                   groupedData[hour.time].nh4 / groupedData[hour.time].count,
                 )
               : 0,
           no2:
             groupedData[hour.time]?.count > 0
-              ? Math.round(
+              ? roundToFloat(
                   groupedData[hour.time].no2 / groupedData[hour.time].count,
                 )
               : 0,
           waterTemperature:
             groupedData[hour.time]?.count > 0
-              ? Math.round(
+              ? roundToFloat(
                   groupedData[hour.time].waterTemperature /
                     groupedData[hour.time].count,
                 )
               : 0,
-          feedingData: Math.round(groupedData[hour.time]?.feedingData || 0),
-          supplementDosing: Math.round(
+          feedingData: roundToFloat(groupedData[hour.time]?.feedingData || 0),
+          supplementDosing: roundToFloat(
             groupedData[hour.time]?.supplementDosing || 0,
           ),
         }));
@@ -389,32 +400,32 @@ export class HomeService {
           time: null,
           ph:
             groupedData[date]?.count > 0
-              ? Math.round(groupedData[date].ph / groupedData[date].count)
+              ? roundToFloat(groupedData[date].ph / groupedData[date].count)
               : 0,
           do:
             groupedData[date]?.count > 0
-              ? Math.round(groupedData[date].do / groupedData[date].count)
+              ? roundToFloat(groupedData[date].do / groupedData[date].count)
               : 0,
           alk:
             groupedData[date]?.count > 0
-              ? Math.round(groupedData[date].alk / groupedData[date].count)
+              ? roundToFloat(groupedData[date].alk / groupedData[date].count)
               : 0,
           nh4:
             groupedData[date]?.count > 0
-              ? Math.round(groupedData[date].nh4 / groupedData[date].count)
+              ? roundToFloat(groupedData[date].nh4 / groupedData[date].count)
               : 0,
           no2:
             groupedData[date]?.count > 0
-              ? Math.round(groupedData[date].no2 / groupedData[date].count)
+              ? roundToFloat(groupedData[date].no2 / groupedData[date].count)
               : 0,
           waterTemperature:
             groupedData[date]?.count > 0
-              ? Math.round(
+              ? roundToFloat(
                   groupedData[date].waterTemperature / groupedData[date].count,
                 )
               : 0,
-          feedingData: Math.round(groupedData[date]?.feedingData || 0),
-          supplementDosing: Math.round(
+          feedingData: roundToFloat(groupedData[date]?.feedingData || 0),
+          supplementDosing: roundToFloat(
             groupedData[date]?.supplementDosing || 0,
           ),
         }));
