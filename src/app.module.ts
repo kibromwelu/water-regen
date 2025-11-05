@@ -16,6 +16,7 @@ import { RecordModule } from './record/record.module';
 import { HomeModule } from './home/home.module';
 import { FcmModule } from './fcm/fcm.module';
 import { WebsocketModule } from './websocket/websocket.module';
+import { TermsOfUseModule } from './terms-of-use/terms-of-use.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { WebsocketModule } from './websocket/websocket.module';
     HomeModule,
     FcmModule,
     WebsocketModule,
+    TermsOfUseModule,
   ],
   controllers: [AppController],
   providers: [AppService],
