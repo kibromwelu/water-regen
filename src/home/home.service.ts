@@ -255,7 +255,12 @@ export class HomeService {
               acc[key] = {
                 date: data.date,
                 time: data.time,
-                count: 0,
+                phCount: 0,
+                doCount: 0,
+                alkCount: 0,
+                nh4Count: 0,
+                no2Count: 0,
+                temperatureCount: 0,
                 ph: 0,
                 do: 0,
                 alk: 0,
@@ -266,7 +271,12 @@ export class HomeService {
                 supplementDosing: 0,
               };
             }
-            acc[key].count += 1;
+            acc[key].phCount += data.ph? 1:0;
+            acc[key].doCount += data.do? 1:0;
+            acc[key].alkCount += data.alk? 1:0;
+            acc[key].nh4Count += data.nh4? 1:0;
+            acc[key].no2Count += data.no2? 1:0;
+            acc[key].temperatureCount += data.waterTemperature? 1:0;
             acc[key].ph += data.ph || 0;
             acc[key].do += data.do || 0;
             acc[key].alk += data.alk || 0;
@@ -293,40 +303,40 @@ export class HomeService {
           date: hour.date,
           time: hour.time,
           ph:
-            groupedData[hour.time]?.count > 0
+            groupedData[hour.time]?.phCount > 0
               ? roundToFloat(
-                  groupedData[hour.time].ph / groupedData[hour.time].count,
+                  groupedData[hour.time].ph / groupedData[hour.time].phCount,
                 )
               : 0,
           do:
-            groupedData[hour.time]?.count > 0
+            groupedData[hour.time]?.doCount > 0
               ? roundToFloat(
-                  groupedData[hour.time].do / groupedData[hour.time].count,
+                  groupedData[hour.time].do / groupedData[hour.time].doCount,
                 )
               : 0,
           alk:
-            groupedData[hour.time]?.count > 0
+            groupedData[hour.time]?.alkCount > 0
               ? roundToFloat(
-                  groupedData[hour.time].alk / groupedData[hour.time].count,
+                  groupedData[hour.time].alk / groupedData[hour.time].alkCount,
                 )
               : 0,
           nh4:
-            groupedData[hour.time]?.count > 0
+            groupedData[hour.time]?.nh4Count > 0
               ? roundToFloat(
-                  groupedData[hour.time].nh4 / groupedData[hour.time].count,
+                  groupedData[hour.time].nh4 / groupedData[hour.time].nh4Count,
                 )
               : 0,
           no2:
-            groupedData[hour.time]?.count > 0
+            groupedData[hour.time]?.no2Count > 0
               ? roundToFloat(
-                  groupedData[hour.time].no2 / groupedData[hour.time].count,
+                  groupedData[hour.time].no2 / groupedData[hour.time].no2Count,
                 )
               : 0,
           waterTemperature:
-            groupedData[hour.time]?.count > 0
+            groupedData[hour.time]?.temperatureCount > 0
               ? roundToFloat(
                   groupedData[hour.time].waterTemperature /
-                    groupedData[hour.time].count,
+                    groupedData[hour.time].temperatureCount,
                 )
               : 0,
           feedingData: roundToFloat(groupedData[hour.time]?.feedingData || 0),
@@ -361,7 +371,12 @@ export class HomeService {
             if (!acc[key]) {
               acc[key] = {
                 date: data.date,
-                count: 0,
+                phCount: 0,
+                doCount: 0,
+                alkCount: 0,
+                nh4Count: 0,
+                no2Count: 0,
+                temperatureCount: 0,
                 ph: 0,
                 do: 0,
                 alk: 0,
@@ -372,7 +387,12 @@ export class HomeService {
                 supplementDosing: 0,
               };
             }
-            acc[key].count += 1;
+            acc[key].phCount += data.ph? 1:0;
+            acc[key].doCount += data.do? 1:0;
+            acc[key].alkCount += data.alk? 1:0;
+            acc[key].nh4Count += data.nh4? 1:0;
+            acc[key].no2Count += data.no2? 1:0;
+            acc[key].temperatureCount += data.waterTemperature? 1:0;
             acc[key].ph += data.ph || 0;
             acc[key].do += data.do || 0;
             acc[key].alk += data.alk || 0;
@@ -393,35 +413,35 @@ export class HomeService {
           },
           {} as Record<string, any>,
         );
-
+        
         // Merge with all dates, filling in zeros for missing dates
         summaryData = allDates.map((date) => ({
           date,
           time: null,
           ph:
-            groupedData[date]?.count > 0
-              ? roundToFloat(groupedData[date].ph / groupedData[date].count)
+            groupedData[date]?.phCount > 0
+              ? roundToFloat(groupedData[date].ph / groupedData[date].phCount)
               : 0,
           do:
-            groupedData[date]?.count > 0
-              ? roundToFloat(groupedData[date].do / groupedData[date].count)
+            groupedData[date]?.doCount > 0
+              ? roundToFloat(groupedData[date].do / groupedData[date].doCount)
               : 0,
           alk:
-            groupedData[date]?.count > 0
-              ? roundToFloat(groupedData[date].alk / groupedData[date].count)
+            groupedData[date]?.alkCount > 0
+              ? roundToFloat(groupedData[date].alk / groupedData[date].alkCount)
               : 0,
           nh4:
-            groupedData[date]?.count > 0
-              ? roundToFloat(groupedData[date].nh4 / groupedData[date].count)
+            groupedData[date]?.nh4Count > 0
+              ? roundToFloat(groupedData[date].nh4 / groupedData[date].nh4Count)
               : 0,
           no2:
-            groupedData[date]?.count > 0
-              ? roundToFloat(groupedData[date].no2 / groupedData[date].count)
+            groupedData[date]?.no2Count > 0
+              ? roundToFloat(groupedData[date].no2 / groupedData[date].no2Count)
               : 0,
           waterTemperature:
-            groupedData[date]?.count > 0
+            groupedData[date]?.temperatureCount > 0
               ? roundToFloat(
-                  groupedData[date].waterTemperature / groupedData[date].count,
+                  groupedData[date].waterTemperature / groupedData[date].temperatureCount,
                 )
               : 0,
           feedingData: roundToFloat(groupedData[date]?.feedingData || 0),

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { subDays, startOfDay, endOfDay } from 'date-fns';
+import { subDays, startOfDay, endOfDay, subMinutes } from 'date-fns';
 import {
   getKoreaDate,
   getKoreaHour,
@@ -175,12 +175,12 @@ export class CronService {
 
     // Fetch all active recurring conditions
     const recurringConditions = await this.prisma.recurringCondition.findMany({
-      where: {
-        OR: [
-          { endDate: null },
-          { endDate: { gt: now } },
-        ],
-      },
+      // where: {
+      //   OR: [
+      //     { endDate: null },
+      //     { endDate: { gte: now } },
+      //   ],
+      // },
       include: {
         tank: true,
       },
@@ -200,8 +200,9 @@ export class CronService {
         message,
       } = condition;
 
-      // Check stop conditions
-      if (endDate && isAfter(now, endDate)) {
+      const lastRun = subMinutes(now, 5);
+      //Check stop conditions
+      if (endDate && isAfter(lastRun, endDate)) {
         console.log(`Condition ${id} expired due to endDate.`);
         continue;
       }

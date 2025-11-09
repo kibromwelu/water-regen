@@ -35,7 +35,7 @@ export class RecurringConditionService {
       
       let utcDate;
       if (dto.endDate) {
-        utcDate = koreaToUtc(dto.endDate);
+        utcDate = koreaToUtc(dto.endDate, '23:59');
       }
       const existingTank = await this.prisma.tank.findFirst({
         where: {
@@ -115,7 +115,7 @@ export class RecurringConditionService {
       
       let utcDate;
       if (dto.endDate) {
-        utcDate = koreaToUtc(dto.endDate);
+        utcDate = koreaToUtc(dto.endDate, '23:59');
       }
 
       if (dto.tankId) {

@@ -307,8 +307,16 @@ export class RecordService {
         lastDate = new Date(utcEndDate);
       } else if (startDate && !endDate) {
         beginningDate = new Date(koreaToUtc(startDate));
-        lastDate = new Date(koreaToUtc(startDate, '23:59:59.999'));
-
+        let nowDate = new Date().toISOString();
+        let koreaNowDate = getKoreaDate(utcToKorea(nowDate));
+        let koreaHour = getKoreaHour(utcToKorea(nowDate));
+        
+        if(new Date(startDate).getTime() === new Date(koreaNowDate).getTime()){
+          lastDate = new Date(koreaToUtc(startDate, koreaHour.toString().padStart(2, '0')));
+        }else{
+          lastDate = new Date(koreaToUtc(startDate, '23:59:59.999'));
+        }
+        
       } else {
         let now = new Date().toISOString();
         let nowDate = getKoreaDate(utcToKorea(now));
@@ -352,7 +360,7 @@ export class RecordService {
       return {
         tankId: tankId,
         startDate: koreaStartDate,
-        endDate: koreaEndDate,
+        endDate: koreaEndDate == koreaStartDate? null: koreaEndDate,
         time:
           time ??
           getKoreaHour(utcToKorea(lastDate.toISOString()))
@@ -446,7 +454,7 @@ export class RecordService {
           endDate: koreaToUtc(endDate, time),
         },
       });
-      console.log('Record created:', record);
+      
       return {
         estimatedCount,
         estimatedHarvest,

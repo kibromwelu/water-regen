@@ -12,10 +12,10 @@ export class ConditionService {
 
     async getAllConditions(userId: string): Promise<ConditionsListResponse> {
         try {
-            let feedingConditionsQuery = this.prisma.condition.findMany({ where: { type: 'FEEDING', tank: { userId } }, select: { id: true, name: true } })
-            let alertConditionsQuery = this.prisma.condition.findMany({ where: { type: 'ALERT', tank: { userId } }, select: { id: true, name: true } })
-            let recurringConditionsQuery = this.prisma.recurringCondition.findMany({ where: { tank: { userId } }, select: { id: true, name: true } })
-            let feedIncreaseConditionsQuery = this.prisma.feedIncreaseCondition.findMany({ where: { tank: { userId } }, select: { id: true, name: true } })
+            let feedingConditionsQuery = this.prisma.condition.findMany({ where: { type: 'FEEDING', tank: { userId } }, select: { id: true, name: true }, orderBy:{createdAt:'asc'} })
+            let alertConditionsQuery = this.prisma.condition.findMany({ where: { type: 'ALERT', tank: { userId } }, select: { id: true, name: true }, orderBy:{createdAt:'asc'} })
+            let recurringConditionsQuery = this.prisma.recurringCondition.findMany({ where: { tank: { userId } }, select: { id: true, name: true }, orderBy:{createdAt:'asc'} })
+            let feedIncreaseConditionsQuery = this.prisma.feedIncreaseCondition.findMany({ where: { tank: { userId } }, select: { id: true, name: true }, orderBy:{createdAt:'asc'} })
             let [feedingConditions, alertConditions, recurringConditions, feedIncreaseConditions] = await Promise.all([feedingConditionsQuery, alertConditionsQuery, recurringConditionsQuery, feedIncreaseConditionsQuery])
 
             return {

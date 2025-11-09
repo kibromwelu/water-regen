@@ -81,7 +81,7 @@ export class FcmService {
     id,
     title,
     body,
-    ttl = 60 * 60 * 24,
+    ttl = 60 * 60 * 24 * 7, // 7 days
     data,
     priority,
   }: {
