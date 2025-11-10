@@ -320,7 +320,7 @@ export class UserService {
         },
       });
 
-      return { message: 'Account has been deleted.' };
+      return { message: 'Account successfully logged out.' };
     } catch (error) {
       // Handle any errors
       const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;

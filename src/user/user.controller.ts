@@ -90,6 +90,7 @@ export class UserController {
   }
 
   @Post('logout')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Logout user account',
   })
