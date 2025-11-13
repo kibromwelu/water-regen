@@ -64,7 +64,7 @@ export class HomeService {
         }
       } else if (dto.startDate && !dto.endDate) {
         // set isHourlyView to true if only startDate is provided
-        dto.isHourlyView = true;
+        //dto.isHourlyView = true;
         // only for one day
         startDate = new Date(koreaToUtc(dto.startDate));
 
@@ -172,10 +172,10 @@ export class HomeService {
         dto.startDate = getKoreaDate(utcToKorea(tankCreationAt.toISOString()));
       }
 
-      // if the startDate and endDate are the same day, set isHourlyView to true
-      if(dto.startDate === dto.endDate){
-        dto.isHourlyView = true;
-      }
+      // // if the startDate and endDate are the same day, set isHourlyView to true
+      // if(dto.startDate === dto.endDate){
+      //   dto.isHourlyView = true;
+      // }
 
       // Adjust todayLastHour for hourly view
       if (dto.isHourlyView) {

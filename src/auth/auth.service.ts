@@ -27,10 +27,10 @@ export class AuthService {
     async verifyPhone(dto: VerifyPhoneDto, findAccount: boolean = false): Promise<MessageResponse> {
         // throw new Error('Method not implemented.');
         try {
-            let existingAccount = await this.prisma.user.findUnique({ where: { phoneNumber: dto.phoneNumber, status:'ACTIVE' } });
-            if (existingAccount && !findAccount) {
-                throw new HttpException('Phone number already in use', 400)
-            }
+            // let existingAccount = await this.prisma.user.findUnique({ where: { phoneNumber: dto.phoneNumber, status:'ACTIVE' } });
+            // if (existingAccount && !findAccount) {
+            //     throw new HttpException('Phone number already in use', 400)
+            // }
 
             const code = Math.floor(100000 + Math.random() * 900000).toString();
             // const code = '123456'; // temporary for testing
@@ -77,10 +77,10 @@ export class AuthService {
                 throw new BadRequestException('Verification code expired');
             }
 
-            const existingAccount = await this.prisma.user.findUnique({ where: { phoneNumber: body.phoneNumber } });
-            if (existingAccount && existingAccount.status == 'ACTIVE') {
-                throw new BadRequestException('Phone number already in use');
-            }
+            // const existingAccount = await this.prisma.user.findUnique({ where: { phoneNumber: body.phoneNumber } });
+            // if (existingAccount && existingAccount.status == 'ACTIVE') {
+            //     throw new BadRequestException('Phone number already in use');
+            // }
 
             let user = await this.prisma.user.upsert({
                 where: { phoneNumber: body.phoneNumber },
@@ -89,9 +89,14 @@ export class AuthService {
                 },
                 update: {}
             });
+            
             await this.prisma.verificationCode.delete({
                 where: { phoneNumber: body.phoneNumber }
             });
+
+            if (user && user.status == 'ACTIVE') {
+                throw new HttpException('Phone number already in use',409);
+            }
 
             return { message: 'Phone number verified successfully', id: user.id };
 
@@ -144,9 +149,9 @@ export class AuthService {
     async findAccount(dto: VerifyPhoneDto) {
         try {
             let user = await this.prisma.user.findUnique({ where: { phoneNumber: dto.phoneNumber, status:'ACTIVE' } });
-            if (!user) {
-                throw new NotFoundException('Account not found');
-            }
+            // if (!user) {
+            //     throw new NotFoundException('Account not found');
+            // }
             return this.verifyPhone({ phoneNumber: dto.phoneNumber }, true);
         } catch (error) {
             throw new HttpException(error.message, error.status || 500);
@@ -170,10 +175,18 @@ export class AuthService {
             if (verificationRecord.expiresAt < new Date()) {
                 throw new BadRequestException('Verification code expired');
             }
-            let user = await this.prisma.user.findUnique({ where: { phoneNumber: body.phoneNumber, status:'ACTIVE' } });
-            if (!user) {
-                throw new NotFoundException('Account not found');
-            }
+            // let user = await this.prisma.user.findUnique({ where: { phoneNumber: body.phoneNumber, status:'ACTIVE' } });
+            // if (!user) {
+            //     throw new NotFoundException('Account not found');
+            // }
+            let user = await this.prisma.user.upsert({
+                where: { phoneNumber: body.phoneNumber },
+                create: {
+                    phoneNumber: body.phoneNumber
+                },
+                update: {}
+            });
+
             let passwordChangeRequest = await this.prisma.passwordChangeRequest.create({
                 data: {
                     userId: user.id,
@@ -184,9 +197,10 @@ export class AuthService {
                 where: { phoneNumber: body.phoneNumber }
             });
             return {
+                hasAccount: user.status === 'ACTIVE' ? true : false,
                 id: user.id,
                 username: user.username,
-                token: passwordChangeRequest?.id
+                token: user.status === 'ACTIVE' ? passwordChangeRequest?.id : null,
             }
         } catch (error) {
             throw new HttpException(error.message, error.status || 500);
