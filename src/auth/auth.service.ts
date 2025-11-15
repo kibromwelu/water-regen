@@ -535,7 +535,9 @@ export class AuthService {
             const key = await this.jwksClient.getSigningKey(kid);
             return key.getPublicKey();
         } catch (error) {
-            throw new Error(`Failed to get Apple signing key: ${error.message}`);
+            //throw new Error(`Failed to get Apple signing key: ${error.message}`);
+            console.log(`Failed to get Apple signing key: ${error.message}`);
+            throw new HttpException(error.message, error.status || 500);
         }
     }
 
@@ -543,19 +545,19 @@ export class AuthService {
         try {
             let token = { accessToken: '', refreshToken: '' };
             if (!identityToken) {
-                throw new Error('Identity token is required');
+                throw new BadRequestException('Identity token is required');
             }
 
             // Decode token header to get key ID
             const decodedToken = jwt.decode(identityToken, { complete: true });
             if (!decodedToken) {
-                throw new Error('Invalid identity token format');
+                throw new BadRequestException('Invalid identity token format');
             }
 
             const { header, payload } = decodedToken as any;
 
             if (!header?.kid) {
-                throw new Error('Missing key ID in token header');
+                throw new BadRequestException('Missing key ID in token header');
             }
 
             // Get Apple's public key
@@ -589,7 +591,8 @@ export class AuthService {
             };
 
         } catch (error) {
-            throw new Error(`Apple identity token verification failed: ${error.message}`);
+            console.log(`Apple identity token verification failed: ${error.message}`);
+            throw new HttpException(error.message, error.status || 500);
         }
     }
 

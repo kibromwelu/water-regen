@@ -437,7 +437,8 @@ export class RecordService {
         );
       }
 
-      let estimatedHarvest = lastShrimpWeight + feedAdded / fcr;
+      let feedAddedInKg = feedAdded / 1000;
+      let estimatedHarvest = lastShrimpWeight + feedAddedInKg / fcr;
       let estimatedCount = Math.round(
         (estimatedHarvest * 1000) / averageBodyWeight,
       );

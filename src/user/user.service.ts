@@ -97,7 +97,7 @@ export class UserService {
             });
           } else {
             // active user with the phone number exists
-            throw new BadRequestException('Phone number already in use');
+            //throw new BadRequestException('Phone number already in use');
           }
         }
       }
@@ -151,6 +151,13 @@ export class UserService {
 
       if (verification.expiresAt < new Date()) {
         throw new BadRequestException('Verification code expired');
+      }
+
+      const existingUser = await this.prisma.user.findUnique({
+        where: { phoneNumber, status: 'ACTIVE' },
+      });
+      if (existingUser && existingUser.id !== userId) {
+        throw new BadRequestException('Phone number already in use');
       }
 
       // update user phone number
