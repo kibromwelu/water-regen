@@ -157,7 +157,7 @@ export class UserService {
         where: { phoneNumber, status: 'ACTIVE' },
       });
       if (existingUser && existingUser.id !== userId) {
-        throw new BadRequestException('Phone number already in use');
+        throw new HttpException('Phone number already in use',409);
       }
 
       // update user phone number
