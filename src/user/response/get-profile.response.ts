@@ -26,4 +26,7 @@ export class GetProfileResponse {
     
     @ApiProperty()
     linkedSocialAccount: SocialAccount;
+
+    @ApiProperty()
+    isAdmin: boolean;
 }

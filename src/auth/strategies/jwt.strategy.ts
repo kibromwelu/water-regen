@@ -26,7 +26,7 @@ if (!secret) {
     });
   }
 
-  async validate(req: Request, payload: { id: string; role: string, permission: string }) {
+  async validate(req: Request, payload: { id: string}) {
 
     let user = await this.prisma.user.findUnique({ where: { id: payload.id } })
       if (!user) {
@@ -34,6 +34,7 @@ if (!secret) {
       }
     return {
       id: payload.id,
+      role: user.role
     };
   }
 }

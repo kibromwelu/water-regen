@@ -14,14 +14,16 @@ import * as jwksClient from 'jwks-rsa';
 
 import {
   ChangePasswordDto,
+  GetUsersListDto,
   LogoutDto,
   SendVerficationCodeDto,
   VerifyVerifcationCodeDto,
 } from './dto';
-import { GetProfileResponse, VerifyPasswordChangeResponse } from './response';
+import { GetProfileResponse, GetUserResponse, GetUserRoleResponse, VerifyPasswordChangeResponse } from './response';
 import axios from 'axios';
 import { SmsService } from 'src/sms/sms.service';
-import { SocialAccountProvider } from '@prisma/client';
+import { SocialAccountProvider, UserRole } from '@prisma/client';
+import { InfiniteScroll } from 'src/common/dto';
 
 @Injectable()
 export class UserService {
@@ -63,6 +65,7 @@ export class UserService {
           KAKAO: connectedProviders.includes('KAKAO'),
           NAVER: connectedProviders.includes('NAVER'),
         },
+        isAdmin: user.role === 'ADMIN',
       };
     } catch (error) {
       // Handle any errors
@@ -589,4 +592,69 @@ export class UserService {
       throw new HttpException(error.message, error.status || 500);
     }
   }
+
+  async getUsersList(dto:GetUsersListDto, pagination:InfiniteScroll): Promise<GetUserResponse[]> {
+    try {
+      let { limit, cursor } = pagination;
+      let where: any = { status: 'ACTIVE', role: 'USER' };
+      if (dto.search) {
+        // Apply search filter to username and phoneNumber
+        where.OR = [
+          { username: { contains: dto.search, mode: 'insensitive' } },
+          { phoneNumber: { contains: dto.search, mode: 'insensitive' } },
+        ];
+      }
+
+      const user = await this.prisma.user.findMany({
+        where,
+        select:{
+          id: true,
+          username: true,
+          phoneNumber: true,
+          createdAt: true,
+        },
+        take: limit ,
+        skip: cursor ? 1 : 0,
+        cursor: cursor ? { id: cursor } : undefined,
+        orderBy: { createdAt: 'desc'}
+      });
+
+      return user;
+    } catch (error) {
+      // Handle any errors
+      const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      throw new HttpException(error.message, statusCode);
+    }
+  }
+
+  async updateUserRole(id:string, role:UserRole=UserRole.ADMIN): Promise<GetUserRoleResponse> {
+    try {
+
+      const existingUser = await this.prisma.user.findUnique({
+        where:{ id },
+      });
+
+      if (!existingUser) {
+        throw new Error('User not found');
+      }
+
+      const user = await this.prisma.user.update({
+        where:{
+          id,
+        },
+        data:{
+          role,
+        }
+      });
+
+      return {
+        role: user.role,
+      };
+    } catch (error) {
+      // Handle any errors
+      const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      throw new HttpException(error.message, statusCode);
+    }
+  }
+
 }

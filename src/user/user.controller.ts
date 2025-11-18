@@ -5,26 +5,31 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  Patch,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
-import { DisconnectSocialAccountResponse, GetProfileResponse, VerifyPasswordChangeResponse } from './response';
-import { CurrentUserId } from 'src/common/decorators';
-import { JwtGuard } from 'src/common/guards';
+import { DisconnectSocialAccountResponse, GetProfileResponse, GetUserResponse, GetUserRoleResponse, VerifyPasswordChangeResponse } from './response';
+import { CurrentUserId, Roles } from 'src/common/decorators';
+import { JwtGuard, RoleGuard } from 'src/common/guards';
 import {
   ChangePasswordDto,
+  GetUsersListDto,
   LogoutDto,
   SendVerficationCodeDto,
+  UpdateUserRoleDto,
   VerifyVerifcationCodeDto,
 } from './dto';
 import { MessageResponse } from 'src/common/response';
 import { SocialAccountProvider } from '@prisma/client';
+import { InfiniteScroll } from 'src/common/dto';
 
 @ApiBearerAuth()
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, RoleGuard)
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) { }
@@ -205,5 +210,30 @@ export class UserController {
     @CurrentUserId() userId: string,
   ): Promise<MessageResponse> {
     return this.userService.disconnectSocialAccount(provider, userId);
+  }
+
+  @Get('list')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Get users list', })
+  @ApiResponse({ status: HttpStatus.OK, type: [GetUserResponse] })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized access' })
+  async getUsersList(
+    @Query() dto: GetUsersListDto,
+    @Query() pagination: InfiniteScroll,
+  ): Promise<GetUserResponse[]> {
+    return this.userService.getUsersList(dto, pagination);
+  }
+
+  @Patch('update-role/:id')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Update user role', })
+  @ApiResponse({ status: HttpStatus.OK, type: GetUserRoleResponse })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User not found' })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized access' })
+  async updateUserRole(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserRoleDto
+  ): Promise<GetUserRoleResponse> {
+    return this.userService.updateUserRole(id, dto.role);
   }
 }
