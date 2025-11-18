@@ -212,7 +212,7 @@ export class UserController {
     return this.userService.disconnectSocialAccount(provider, userId);
   }
 
-  @Get('list')
+  @Get('admin/list')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Get users list', })
   @ApiResponse({ status: HttpStatus.OK, type: [GetUserResponse] })
@@ -224,7 +224,7 @@ export class UserController {
     return this.userService.getUsersList(dto, pagination);
   }
 
-  @Patch('update-role/:id')
+  @Patch('admin/update-role/:id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Update user role', })
   @ApiResponse({ status: HttpStatus.OK, type: GetUserRoleResponse })

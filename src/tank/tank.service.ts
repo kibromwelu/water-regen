@@ -8,7 +8,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTankDto, UpdateTankDto } from './dto';
 import { MessageResponse } from 'src/common/response';
-import { GetTankDetailResponse, GetTanksListResponse } from './response';
+import { GetAdminTanksListResponse, GetTankDetailResponse, GetTanksListResponse } from './response';
 import { formatId } from 'src/common/utils';
 
 @Injectable()
@@ -28,18 +28,6 @@ export class TankService {
           averageBodyWeight: dto.averageBodyWeight,
           numberStocked: dto.numberStocked,
           salinity: dto.salinity || undefined,
-          // husbandryData: {
-          //   create: {
-          //     date: new Date(),
-          //     waterTemperature: dto.waterTemperature || undefined,
-          //     do: dto.do || undefined,
-          //     ph: dto.ph || undefined,
-          //     nh4: dto.nh4 || undefined,
-          //     no2: dto.no2 || undefined,
-          //     alk: dto.alk || undefined,
-          //     salinity: dto.salinity || undefined,
-          //   },
-          // },
         },
       });
 
@@ -97,8 +85,6 @@ export class TankService {
         data: {
           name: dto.name || undefined,
           whitelegShrimpStrain: dto.whitelegShrimpStrain || undefined,
-          // averageBodyWeight: dto.averageBodyWeight || undefined,
-          // numberStocked: dto.numberStocked || undefined,
           salinity: dto.salinity || null,
         },
         include: {
@@ -208,6 +194,37 @@ export class TankService {
       return {
         message: 'Tank has been deleted.',
       };
+    } catch (error) {
+      // Handle any errors
+      const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      throw new HttpException(error.message, statusCode);
+    }
+  }
+
+  async getUserTanks(userId: string): Promise<GetAdminTanksListResponse[]> {
+    try {
+      const tanks = await this.prisma.tank.findMany({
+        where: {
+          userId: userId,
+        },
+        include:{
+          records:{ take: 1, orderBy: { createdAt: 'desc' }}
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      let formattedTanks = tanks.map((tank) => ({
+        id: tank.id,
+        name: tank.name,
+        tankerId: formatId(tank.tankerId),
+        whitelegShrimpStrain: tank.whitelegShrimpStrain,
+        averageBodyWeight: tank.averageBodyWeight,
+        numberStocked: tank.numberStocked,
+        salinity: tank.salinity,
+        shrimpOutput: tank.records?.[0]?.shrimpWeight?? (tank.numberStocked * tank.averageBodyWeight) / 1000,
+      }));
+
+      return formattedTanks;
     } catch (error) {
       // Handle any errors
       const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;

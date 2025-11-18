@@ -1,15 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { JwtGuard } from 'src/common/guards';
+import { JwtGuard, RoleGuard } from 'src/common/guards';
 import { TankService } from './tank.service';
-import { CurrentUserId } from 'src/common/decorators';
-import { GetTankDetailResponse, GetTanksListResponse } from './response';
+import { CurrentUserId, Roles } from 'src/common/decorators';
+import { GetAdminTanksListResponse, GetTankDetailResponse, GetTanksListResponse } from './response';
 import { CreateTankDto, UpdateTankDto } from './dto';
 import { MessageResponse } from 'src/common/response';
 
 
 @ApiBearerAuth()
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, RoleGuard)
 @Controller('tank')
 export class TankController {
     constructor(private readonly tankService: TankService) {}
@@ -62,5 +62,15 @@ export class TankController {
     @Param('id') id: string,
     ): Promise<MessageResponse> {
     return this.tankService.deleteTank(userId, id );
+    }
+
+    @Get('admin/list/:id')
+    @Roles('ADMIN')
+    @ApiOperation({ summary: 'Get list of user tanks by admin' })
+    @ApiResponse({ status: 200, type: [GetAdminTanksListResponse] })
+    async getUserTanks(
+    @Param('id') id: string,
+    ): Promise<GetAdminTanksListResponse[]> {
+    return this.tankService.getUserTanks(id);
     }
 }
