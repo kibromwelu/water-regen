@@ -1,15 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ConditionService } from './condition.service';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ConditionData, ConditionsListResponse, FeedingConditionDetailResponse } from './response';
-import { AlertConditionDto, CreateFeedingConditionDto, UpdateFeedingConditionDto } from './dto';
+import { AlertConditionDto, CopyConditionDto, CreateFeedingConditionDto, UpdateFeedingConditionDto } from './dto';
 import { MessageResponse } from 'src/common/response';
-import { JwtGuard } from 'src/common/guards';
-import { CurrentUserId } from 'src/common/decorators';
+import { JwtGuard, RoleGuard } from 'src/common/guards';
+import { CurrentUserId, Roles } from 'src/common/decorators';
 
 @Controller('condition')
 @ApiBearerAuth()
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, RoleGuard)
 export class ConditionController {
     constructor(private readonly conditionService: ConditionService) { }
     // common
@@ -22,6 +22,15 @@ export class ConditionController {
         } catch (error) {
             throw new Error('Method not implemented.');
         }
+    }
+    @Get('/admin/all')
+    @Roles('ADMIN')
+    @ApiOperation({ summary: 'Get all conditions' })
+    @ApiResponse({ status: 200, type: ConditionsListResponse })
+    async getAllTankConditions(@Query('userId') userId: string, @Query('tankId') tankId: string): Promise<ConditionsListResponse> {
+        console.log("Conditions called: ", userId, tankId);
+        return await this.conditionService.getAllTankConditions(userId, tankId);
+
     }
 
     //section 1: Feeding condition
@@ -79,5 +88,21 @@ export class ConditionController {
     @ApiResponse({ status: 200, type: MessageResponse })
     async deleteAlertCondition(@Param('id') id: string, @CurrentUserId() userId: string): Promise<MessageResponse> {
         return this.conditionService.deleteAlertCondition(id, userId);
+    }
+
+    @ApiOperation({
+        summary: "Copy condition to another tank",
+        description: "Copy a condition (feeding, alert, recurring, feed increase) to another tank."
+    })
+    @ApiResponse({
+        status: 200,
+        description: "Condition copied successfully",
+        type: MessageResponse
+    })
+    @ApiBearerAuth()
+    @Roles("ADMIN")
+    @Post('/copy-condition')
+    async copyCondition(@Body() dto: CopyConditionDto): Promise<MessageResponse> {
+        return this.conditionService.copyConditionsToTank(dto);
     }
 }

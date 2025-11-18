@@ -4,6 +4,7 @@ import { RecurringConditionController } from './recurring-condition.controller';
 
 @Module({
   providers: [RecurringConditionService],
-  controllers: [RecurringConditionController]
+  controllers: [RecurringConditionController],
+  exports: [RecurringConditionService],
 })
-export class RecurringConditionModule {}
+export class RecurringConditionModule { }

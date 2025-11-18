@@ -197,7 +197,7 @@ export class UserController {
   ) {
     return this.userService.connectWithApple(identityToken, userId);
   }
-  
+
   @Post('disconnect-account')
   @ApiOperation({ summary: 'Disconnect linked social account', description: 'Disconnect a linked social account from the user profile' })
   @ApiQuery({ name: 'provider', enum: SocialAccountProvider, description: 'The social account provider to disconnect' })
@@ -225,7 +225,7 @@ export class UserController {
   }
 
   @Patch('admin/update-role/:id')
-  @Roles('ADMIN')
+  // @Roles('ADMIN')
   @ApiOperation({ summary: 'Update user role', })
   @ApiResponse({ status: HttpStatus.OK, type: GetUserRoleResponse })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User not found' })
