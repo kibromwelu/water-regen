@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { SensorType } from "@prisma/client";
 
 class TankObject {
     @ApiProperty()
@@ -15,8 +16,8 @@ export class AlertConditionDetailResponse {
     name: string;
     @ApiProperty()
     tank: TankObject;
-    @ApiProperty()
-    sensor: string;
+    @ApiProperty({ enum: SensorType })
+    sensor: SensorType;
     @ApiProperty()
     value: number;
     @ApiProperty()

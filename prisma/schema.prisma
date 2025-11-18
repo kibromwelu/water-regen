@@ -244,6 +244,9 @@ enum SensorType {
   NO2
   ALK
   WATER_TEMPERATURE
+  BIO_FORMULA_INDEX1
+  BIO_FORMULA_INDEX2
+  BIO_FORMULA_INDEX3
 }
 
 enum ConditionValueType {

@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ConditionService } from './condition.service';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { ConditionData, ConditionsListResponse, FeedingConditionDetailResponse } from './response';
+import { AlertConditionDetailResponse, ConditionData, ConditionsListResponse, FeedingConditionDetailResponse } from './response';
 import { AlertConditionDto, CopyConditionDto, CreateFeedingConditionDto, UpdateFeedingConditionDto } from './dto';
 import { MessageResponse } from 'src/common/response';
 import { JwtGuard, RoleGuard } from 'src/common/guards';
@@ -65,6 +65,7 @@ export class ConditionController {
     // section 2: Alert condition
     @Get('/alert-condition/:id')
     @ApiOperation({ summary: 'Get alert condition by ID' })
+    @ApiResponse({ status: 200, type: AlertConditionDetailResponse })
     async getAlertConditionDetail(@Param('id') id: string, @CurrentUserId() userId: string) {
         return this.conditionService.getAlertConditionDetail(id, userId);
     }

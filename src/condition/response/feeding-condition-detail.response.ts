@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger"
 import { ConditionValueType, SensorType } from "@prisma/client";
+import { FeedSensorType } from "../dto";
 class TankObject {
     @ApiProperty()
     id: string
@@ -14,7 +15,7 @@ export class FeedingConditionDetailResponse {
     @ApiProperty({ type: TankObject })
     tank: TankObject;
     @ApiProperty({
-        enum: SensorType
+        enum: FeedSensorType
     })
     sensor: SensorType;
     @ApiProperty()
