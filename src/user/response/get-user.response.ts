@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 
 
-export class GetUserResponse {
+class GetUserResponse {
     @ApiProperty()
     id: string;
     
@@ -13,4 +13,15 @@ export class GetUserResponse {
     
     @ApiProperty()
     createdAt: Date;
+
+    @ApiProperty()
+    hasTank: boolean;
+}
+
+export class GetUserslistResponse {
+    @ApiProperty({ type: [GetUserResponse] })
+    users: GetUserResponse[];
+
+    @ApiProperty()
+    total: number;
 }

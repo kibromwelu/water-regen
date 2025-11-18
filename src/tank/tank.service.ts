@@ -208,7 +208,10 @@ export class TankService {
           userId: userId,
         },
         include:{
-          records:{ take: 1, orderBy: { createdAt: 'desc' }}
+          records:{ take: 1, orderBy: { createdAt: 'desc' }},
+          conditions:{ take: 1, orderBy: { createdAt: 'desc' }},
+          recurringConditions:{ take: 1, orderBy: { createdAt: 'desc' }},
+          feedIncreaseConditions:{ take: 1, orderBy: { createdAt: 'desc' }},
         },
         orderBy: { createdAt: 'asc' },
       });
@@ -222,6 +225,7 @@ export class TankService {
         numberStocked: tank.numberStocked,
         salinity: tank.salinity,
         shrimpOutput: tank.records?.[0]?.shrimpWeight?? (tank.numberStocked * tank.averageBodyWeight) / 1000,
+        hasCondition: (tank.conditions.length > 0) || (tank.recurringConditions.length > 0) || (tank.feedIncreaseConditions.length > 0),
       }));
 
       return formattedTanks;

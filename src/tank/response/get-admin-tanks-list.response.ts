@@ -24,4 +24,7 @@ export class GetAdminTanksListResponse {
 
   @ApiProperty()
   shrimpOutput: number;
+
+  @ApiProperty()
+  hasCondition: boolean;
 }
