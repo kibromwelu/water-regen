@@ -28,7 +28,7 @@ export class ConditionController {
     @ApiOperation({ summary: 'Get all conditions' })
     @ApiResponse({ status: 200, type: ConditionsListResponse })
     async getAllTankConditions(@Query('userId') userId: string, @Query('tankId') tankId: string): Promise<ConditionsListResponse> {
-        console.log("Conditions called: ", userId, tankId);
+
         return await this.conditionService.getAllTankConditions(userId, tankId);
 
     }

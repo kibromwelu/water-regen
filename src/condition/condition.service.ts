@@ -33,9 +33,7 @@ export class ConditionService {
     }
     async getAllTankConditions(userId: string, tankId: string): Promise<ConditionsListResponse> {
         try {
-            console.log("Condtions called: ", userId, tankId);
-            // let tank = await this.prisma.tank.findUnique({ where: { id: tankId } });
-            // console.log(tank);
+
             let feedingConditionsQuery = this.prisma.condition.findMany({ where: { type: 'FEEDING', tank: { userId, id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
             let alertConditionsQuery = this.prisma.condition.findMany({ where: { type: 'ALERT', tank: { userId, id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
             let recurringConditionsQuery = this.prisma.recurringCondition.findMany({ where: { tank: { userId, id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
