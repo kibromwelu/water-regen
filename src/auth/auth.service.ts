@@ -25,13 +25,7 @@ export class AuthService {
     ) { }
 
     async verifyPhone(dto: VerifyPhoneDto, findAccount: boolean = false): Promise<MessageResponse> {
-        // throw new Error('Method not implemented.');
         try {
-            // let existingAccount = await this.prisma.user.findUnique({ where: { phoneNumber: dto.phoneNumber, status:'ACTIVE' } });
-            // if (existingAccount && !findAccount) {
-            //     throw new HttpException('Phone number already in use', 400)
-            // }
-
             const code = Math.floor(100000 + Math.random() * 900000).toString();
             // const code = '123456'; // temporary for testing
 

@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
-import { DisconnectSocialAccountResponse, GetProfileResponse, GetUserslistResponse, GetUserRoleResponse, VerifyPasswordChangeResponse } from './response';
+import { DisconnectSocialAccountResponse, GetProfileResponse, GetUserslistResponse, GetUserRoleResponse, VerifyPasswordChangeResponse, GetUserDropdownResponse } from './response';
 import { CurrentUserId, Roles } from 'src/common/decorators';
 import { JwtGuard, RoleGuard } from 'src/common/guards';
 import {
@@ -236,5 +236,16 @@ export class UserController {
     @Body() dto: UpdateUserRoleDto
   ): Promise<GetUserRoleResponse> {
     return this.userService.updateUserRole(id, dto.role);
+  }
+
+  @Get('condition/list')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Get users list for condition copy dropdown', })
+  @ApiResponse({ status: HttpStatus.OK, type: [GetUserDropdownResponse] })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized access' })
+  async getUsersListD(
+    @Query() dto: GetUsersListDto,
+  ): Promise<GetUserDropdownResponse[]> {
+    return this.userService.getUsersDropdown(dto);
   }
 }

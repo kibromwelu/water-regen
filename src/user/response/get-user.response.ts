@@ -1,5 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger";
 
+export class GetUserDropdownResponse {
+    @ApiProperty()
+    id: string;
+    
+    @ApiProperty({type:String})
+    username: string | null;
+}
 
 class GetUserResponse {
     @ApiProperty()

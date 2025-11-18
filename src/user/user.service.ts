@@ -24,6 +24,7 @@ import {
   GetUserRoleResponse,
   VerifyPasswordChangeResponse,
   GetUserslistResponse,
+  GetUserDropdownResponse,
 } from './response';
 import axios from 'axios';
 import { SmsService } from 'src/sms/sms.service';
@@ -601,48 +602,45 @@ export class UserService {
   }
 
   async getUsersList(
-    dto: GetUsersListDto,
-    userId: string,
-    pagination: InfiniteScroll,
-  ): Promise<GetUserslistResponse> {
-    try {
-      let { limit, cursor } = pagination;
-      let myData;
-      let where: any = {
-        status: 'ACTIVE',
-        id: { not: userId },
-      };
+  dto: GetUsersListDto,
+  userId: string,
+  pagination: InfiniteScroll,
+): Promise<GetUserslistResponse> {
+  try {
+    const { limit, cursor } = pagination;
 
-      let myDataCondition: any = {
-        status: 'ACTIVE',
-        id: userId,
-      };
+    // Base conditions
+    const where: any = {
+      status: 'ACTIVE',
+      id: { not: userId },
+    };
 
-      let countCondition: any = {
-        status: 'ACTIVE',
-      };
+    const myDataCondition: any = {
+      status: 'ACTIVE',
+      id: userId,
+    };
 
-      if (dto.search) {
-        // Apply search filter to username and phoneNumber
-        where.OR = [
-          { username: { contains: dto.search, mode: 'insensitive' } },
-          { phoneNumber: { contains: dto.search, mode: 'insensitive' } },
-        ];
+    const countCondition: any = {
+      status: 'ACTIVE',
+    };
 
-        myDataCondition.OR = [
-          { username: { contains: dto.search, mode: 'insensitive' } },
-          { phoneNumber: { contains: dto.search, mode: 'insensitive' } },
-        ];
+    // Apply search logic once
+    const applySearch = (obj: any) => {
+      obj.OR = [
+        { username: { contains: dto.search, mode: 'insensitive' } },
+        { phoneNumber: { contains: dto.search, mode: 'insensitive' } },
+      ];
+    };
 
-        countCondition.OR = [
-          { username: { contains: dto.search, mode: 'insensitive' } },
-          { phoneNumber: { contains: dto.search, mode: 'insensitive' } },
-        ];
-      }
+    if (dto.search) {
+      applySearch(where);
+      applySearch(myDataCondition);
+      applySearch(countCondition);
+    }
 
-      if (!cursor) {
-        // get my data to exclude from list
-        myData = await this.prisma.user.findUnique({
+    // Fetch my own user data on first load
+    const myData = !cursor
+      ? await this.prisma.user.findUnique({
           where: myDataCondition,
           select: {
             id: true,
@@ -651,49 +649,51 @@ export class UserService {
             createdAt: true,
             tanks: true,
           },
-        });
-      }
+        })
+      : null;
 
-      const users = await this.prisma.user.findMany({
-        where,
-        select: {
-          id: true,
-          username: true,
-          phoneNumber: true,
-          createdAt: true,
-          tanks: true,
-        },
-        take: cursor ? limit : limit - 1,
-        skip: cursor ? 1 : 0,
-        cursor: cursor ? { id: cursor } : undefined,
-        orderBy: { createdAt: 'desc' },
-      });
+    // Adjust take: if myData exists, reserve one slot
+    const take = myData ? limit - 1 : limit;
 
-      // prepend my data if no cursor
-      if (myData && !cursor) {
-        users.unshift(myData);
-      }
+    const users = await this.prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        username: true,
+        phoneNumber: true,
+        createdAt: true,
+        tanks: true,
+      },
+      take,
+      skip: cursor ? 1 : 0,
+      cursor: cursor ? { id: cursor } : undefined,
+      orderBy: { createdAt: 'desc' },
+    });
 
-      const totalCount = await this.prisma.user.count({
-        where: countCondition,
-      });
-
-      return  {
-        users:users.map((u) => ({
-          id: u.id,
-          username: u.username,
-          phoneNumber: u.phoneNumber,
-          createdAt: u.createdAt,
-          hasTank: u.tanks.length > 0,
-        })),
-        total: totalCount,
-      };
-    } catch (error) {
-      // Handle any errors
-      const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
-      throw new HttpException(error.message, statusCode);
+    // Prepend myData for first page
+    if (myData) {
+      users.unshift(myData);
     }
+
+    const totalCount = await this.prisma.user.count({
+      where: countCondition,
+    });
+
+    return {
+      users: users.map((u) => ({
+        id: u.id,
+        username: u.username,
+        phoneNumber: u.phoneNumber,
+        createdAt: u.createdAt,
+        hasTank: u.tanks.length > 0,
+      })),
+      total: totalCount,
+    };
+  } catch (error) {
+    throw new HttpException(error.message, error.status || HttpStatus.INTERNAL_SERVER_ERROR);
   }
+}
+
 
   async updateUserRole(
     id: string,
@@ -720,6 +720,36 @@ export class UserService {
       return {
         role: user.role,
       };
+    } catch (error) {
+      // Handle any errors
+      const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      throw new HttpException(error.message, statusCode);
+    }
+  }
+
+  async getUsersDropdown(
+    dto: GetUsersListDto,
+  ): Promise<GetUserDropdownResponse[]> {
+    try {
+      let where: any = {
+        status: 'ACTIVE',
+      };
+
+      if (dto.search) {
+        // Apply search filter to username
+        where.username = { contains: dto.search, mode: 'insensitive' }
+      }
+
+      const users = await this.prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          username: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return  users;
     } catch (error) {
       // Handle any errors
       const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;

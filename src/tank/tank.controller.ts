@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { JwtGuard, RoleGuard } from 'src/common/guards';
 import { TankService } from './tank.service';
 import { CurrentUserId, Roles } from 'src/common/decorators';
-import { GetAdminTanksListResponse, GetTankDetailResponse, GetTanksListResponse } from './response';
+import { GetAdminTanksDropdownResponse, GetAdminTanksListResponse, GetTankDetailResponse, GetTanksListResponse } from './response';
 import { CreateTankDto, UpdateTankDto } from './dto';
 import { MessageResponse } from 'src/common/response';
 
@@ -66,11 +66,21 @@ export class TankController {
 
     @Get('admin/list/:id')
     @Roles('ADMIN')
-    @ApiOperation({ summary: 'Get list of user tanks by admin' })
+    @ApiOperation({ summary: "Get list of user's tanks by admin" })
     @ApiResponse({ status: 200, type: [GetAdminTanksListResponse] })
     async getUserTanks(
     @Param('id') id: string,
     ): Promise<GetAdminTanksListResponse[]> {
     return this.tankService.getUserTanks(id);
+    }
+
+    @Get('condition/list/:id')
+    @Roles('ADMIN')
+    @ApiOperation({ summary: "Get list of user's tanks for condition dropdown" })
+    @ApiResponse({ status: 200, type: [GetAdminTanksDropdownResponse] })
+    async getUserTanksDropdown(
+    @Param('id') id: string,
+    ): Promise<GetAdminTanksDropdownResponse[]> {
+    return this.tankService.getUserTanksDropdown(id);
     }
 }

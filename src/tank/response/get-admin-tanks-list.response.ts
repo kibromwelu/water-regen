@@ -28,3 +28,11 @@ export class GetAdminTanksListResponse {
   @ApiProperty()
   hasCondition: boolean;
 }
+
+export class GetAdminTanksDropdownResponse {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  name: string;
+}
