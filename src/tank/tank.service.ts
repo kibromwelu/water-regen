@@ -8,7 +8,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTankDto, UpdateTankDto } from './dto';
 import { MessageResponse } from 'src/common/response';
-import { GetAdminTanksListResponse, GetTankDetailResponse, GetTanksListResponse } from './response';
+import { GetAdminTanksDropdownResponse, GetAdminTanksListResponse, GetTankDetailResponse, GetTanksListResponse } from './response';
 import { formatId } from 'src/common/utils';
 
 @Injectable()
@@ -208,7 +208,10 @@ export class TankService {
           userId: userId,
         },
         include:{
-          records:{ take: 1, orderBy: { createdAt: 'desc' }}
+          records:{ take: 1, orderBy: { createdAt: 'desc' }},
+          conditions:{ take: 1, orderBy: { createdAt: 'desc' }},
+          recurringConditions:{ take: 1, orderBy: { createdAt: 'desc' }},
+          feedIncreaseConditions:{ take: 1, orderBy: { createdAt: 'desc' }},
         },
         orderBy: { createdAt: 'asc' },
       });
@@ -222,9 +225,37 @@ export class TankService {
         numberStocked: tank.numberStocked,
         salinity: tank.salinity,
         shrimpOutput: tank.records?.[0]?.shrimpWeight?? (tank.numberStocked * tank.averageBodyWeight) / 1000,
+        hasCondition: (tank.conditions.length > 0) || (tank.recurringConditions.length > 0) || (tank.feedIncreaseConditions.length > 0),
       }));
 
       return formattedTanks;
+    } catch (error) {
+      // Handle any errors
+      const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      throw new HttpException(error.message, statusCode);
+    }
+  }
+
+  async getUserTanksDropdown(userId: string): Promise<GetAdminTanksDropdownResponse[]> {
+    try {
+      const tanks = await this.prisma.tank.findMany({
+        where: {
+          userId: userId,
+        },
+        select:{
+          id: true,
+          name: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      // let formattedTanks = tanks.map((tank) => ({
+      //   id: tank.id,
+      //   name: tank.name,
+      //   tankerId: formatId(tank.tankerId),
+      // }));
+
+      return tanks;
     } catch (error) {
       // Handle any errors
       const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;

@@ -19,7 +19,13 @@ import {
   SendVerficationCodeDto,
   VerifyVerifcationCodeDto,
 } from './dto';
-import { GetProfileResponse, GetUserResponse, GetUserRoleResponse, VerifyPasswordChangeResponse } from './response';
+import {
+  GetProfileResponse,
+  GetUserRoleResponse,
+  VerifyPasswordChangeResponse,
+  GetUserslistResponse,
+  GetUserDropdownResponse,
+} from './response';
 import axios from 'axios';
 import { SmsService } from 'src/sms/sms.service';
 import { SocialAccountProvider, UserRole } from '@prisma/client';
@@ -33,7 +39,7 @@ export class UserService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly smsService: SmsService,
-  ) { }
+  ) {}
 
   async getUserProfile(userId: string): Promise<GetProfileResponse> {
     try {
@@ -160,7 +166,7 @@ export class UserService {
         where: { phoneNumber, status: 'ACTIVE' },
       });
       if (existingUser && existingUser.id !== userId) {
-        throw new HttpException('Phone number already in use',409);
+        throw new HttpException('Phone number already in use', 409);
       }
 
       // update user phone number
@@ -308,20 +314,16 @@ export class UserService {
     }
   }
 
-  async logout(
-    id: string,
-    dto: LogoutDto
-  ): Promise<MessageResponse> {
+  async logout(id: string, dto: LogoutDto): Promise<MessageResponse> {
     try {
-      console.log("logout", id ,dto.fcmToken, );
-      
+      console.log('logout', id, dto.fcmToken);
+
       const existingUser = await this.prisma.user.findFirst({
         where: { id },
       });
       if (!existingUser) {
         throw new HttpException('User not found', HttpStatus.BAD_REQUEST);
       }
-
 
       const deleted = await this.prisma.fcmToken.deleteMany({
         where: {
@@ -572,7 +574,10 @@ export class UserService {
     }
   }
 
-  async disconnectSocialAccount(provider: SocialAccountProvider, userId: string) {
+  async disconnectSocialAccount(
+    provider: SocialAccountProvider,
+    userId: string,
+  ) {
     try {
       const existingAccount = await this.prisma.socialAccount.findFirst({
         where: { userId, provider },
@@ -587,51 +592,116 @@ export class UserService {
         where: { id: existingAccount.id },
       });
 
-      return { message: `Account disconnected successfully`, provider: provider };
+      return {
+        message: `Account disconnected successfully`,
+        provider: provider,
+      };
     } catch (error) {
       throw new HttpException(error.message, error.status || 500);
     }
   }
 
-  async getUsersList(dto:GetUsersListDto, pagination:InfiniteScroll): Promise<GetUserResponse[]> {
-    try {
-      let { limit, cursor } = pagination;
-      let where: any = { status: 'ACTIVE', role: 'USER' };
-      if (dto.search) {
-        // Apply search filter to username and phoneNumber
-        where.OR = [
-          { username: { contains: dto.search, mode: 'insensitive' } },
-          { phoneNumber: { contains: dto.search, mode: 'insensitive' } },
-        ];
-      }
+  async getUsersList(
+  dto: GetUsersListDto,
+  userId: string,
+  pagination: InfiniteScroll,
+): Promise<GetUserslistResponse> {
+  try {
+    const { limit, cursor } = pagination;
 
-      const user = await this.prisma.user.findMany({
-        where,
-        select:{
-          id: true,
-          username: true,
-          phoneNumber: true,
-          createdAt: true,
-        },
-        take: limit ,
-        skip: cursor ? 1 : 0,
-        cursor: cursor ? { id: cursor } : undefined,
-        orderBy: { createdAt: 'desc'}
-      });
+    // Base conditions
+    const where: any = {
+      status: 'ACTIVE',
+      id: { not: userId },
+    };
 
-      return user;
-    } catch (error) {
-      // Handle any errors
-      const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
-      throw new HttpException(error.message, statusCode);
+    const myDataCondition: any = {
+      status: 'ACTIVE',
+      id: userId,
+    };
+
+    const countCondition: any = {
+      status: 'ACTIVE',
+    };
+
+    // Apply search logic once
+    const applySearch = (obj: any) => {
+      obj.OR = [
+        { username: { contains: dto.search, mode: 'insensitive' } },
+        { phoneNumber: { contains: dto.search, mode: 'insensitive' } },
+      ];
+    };
+
+    if (dto.search) {
+      applySearch(where);
+      applySearch(myDataCondition);
+      applySearch(countCondition);
     }
+
+    // Fetch my own user data on first load
+    const myData = !cursor
+      ? await this.prisma.user.findUnique({
+          where: myDataCondition,
+          select: {
+            id: true,
+            username: true,
+            phoneNumber: true,
+            createdAt: true,
+            tanks: true,
+          },
+        })
+      : null;
+
+    // Adjust take: if myData exists, reserve one slot
+    const take = myData ? limit - 1 : limit;
+
+    const users = await this.prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        username: true,
+        phoneNumber: true,
+        createdAt: true,
+        tanks: true,
+      },
+      take,
+      skip: cursor ? 1 : 0,
+      cursor: cursor ? { id: cursor } : undefined,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Prepend myData for first page
+    if (myData) {
+      users.unshift(myData);
+    }
+
+    const totalCount = await this.prisma.user.count({
+      where: countCondition,
+    });
+
+    return {
+      users: users.map((u) => ({
+        id: u.id,
+        username: u.username,
+        phoneNumber: u.phoneNumber,
+        createdAt: u.createdAt,
+        hasTank: u.tanks.length > 0,
+      })),
+      total: totalCount,
+    };
+  } catch (error) {
+    throw new HttpException(error.message, error.status || HttpStatus.INTERNAL_SERVER_ERROR);
   }
+}
 
-  async updateUserRole(id:string, role:UserRole=UserRole.ADMIN): Promise<GetUserRoleResponse> {
+
+  async updateUserRole(
+    id: string,
+    role: UserRole = UserRole.ADMIN,
+  ): Promise<GetUserRoleResponse> {
     try {
-
       const existingUser = await this.prisma.user.findUnique({
-        where:{ id },
+        where: { id },
       });
 
       if (!existingUser) {
@@ -639,12 +709,12 @@ export class UserService {
       }
 
       const user = await this.prisma.user.update({
-        where:{
+        where: {
           id,
         },
-        data:{
+        data: {
           role,
-        }
+        },
       });
 
       return {
@@ -657,4 +727,33 @@ export class UserService {
     }
   }
 
+  async getUsersDropdown(
+    dto: GetUsersListDto,
+  ): Promise<GetUserDropdownResponse[]> {
+    try {
+      let where: any = {
+        status: 'ACTIVE',
+      };
+
+      if (dto.search) {
+        // Apply search filter to username
+        where.username = { contains: dto.search, mode: 'insensitive' }
+      }
+
+      const users = await this.prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          username: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return  users;
+    } catch (error) {
+      // Handle any errors
+      const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      throw new HttpException(error.message, statusCode);
+    }
+  }
 }

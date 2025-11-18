@@ -24,4 +24,15 @@ export class GetAdminTanksListResponse {
 
   @ApiProperty()
   shrimpOutput: number;
+
+  @ApiProperty()
+  hasCondition: boolean;
+}
+
+export class GetAdminTanksDropdownResponse {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  name: string;
 }

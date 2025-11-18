@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
-import { DisconnectSocialAccountResponse, GetProfileResponse, GetUserResponse, GetUserRoleResponse, VerifyPasswordChangeResponse } from './response';
+import { DisconnectSocialAccountResponse, GetProfileResponse, GetUserslistResponse, GetUserRoleResponse, VerifyPasswordChangeResponse, GetUserDropdownResponse } from './response';
 import { CurrentUserId, Roles } from 'src/common/decorators';
 import { JwtGuard, RoleGuard } from 'src/common/guards';
 import {
@@ -215,13 +215,14 @@ export class UserController {
   @Get('admin/list')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Get users list', })
-  @ApiResponse({ status: HttpStatus.OK, type: [GetUserResponse] })
+  @ApiResponse({ status: HttpStatus.OK, type: GetUserslistResponse })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized access' })
   async getUsersList(
     @Query() dto: GetUsersListDto,
     @Query() pagination: InfiniteScroll,
-  ): Promise<GetUserResponse[]> {
-    return this.userService.getUsersList(dto, pagination);
+    @CurrentUserId() userId: string,
+  ): Promise<GetUserslistResponse> {
+    return this.userService.getUsersList(dto, userId ,pagination);
   }
 
   @Patch('admin/update-role/:id')
@@ -235,5 +236,16 @@ export class UserController {
     @Body() dto: UpdateUserRoleDto
   ): Promise<GetUserRoleResponse> {
     return this.userService.updateUserRole(id, dto.role);
+  }
+
+  @Get('condition/list')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Get users list for condition copy dropdown', })
+  @ApiResponse({ status: HttpStatus.OK, type: [GetUserDropdownResponse] })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized access' })
+  async getUsersListD(
+    @Query() dto: GetUsersListDto,
+  ): Promise<GetUserDropdownResponse[]> {
+    return this.userService.getUsersDropdown(dto);
   }
 }
