@@ -11,7 +11,7 @@ import {
 import { RecurringConditionService } from './recurring-condition.service';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { GetRecurringConditionDetailResponse } from './response';
-import { CurrentUserId } from 'src/common/decorators';
+import { CurrentUserId, CurrentUserRole } from 'src/common/decorators';
 import { MessageResponse } from 'src/common/response';
 import {
   CreateRecurringConditionDto,
@@ -34,10 +34,12 @@ export class RecurringConditionController {
   async getDetailRecurringCondition(
     @CurrentUserId() userId: string,
     @Param('id') id: string,
+    @CurrentUserRole() role: string
   ): Promise<GetRecurringConditionDetailResponse> {
     return this.recurringConditionService.getDetailRecurringCondition(
       userId,
       id,
+      role
     );
   }
 

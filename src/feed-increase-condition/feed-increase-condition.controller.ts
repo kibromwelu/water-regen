@@ -7,6 +7,7 @@ import { FeedIncreaseConditionResponse } from './response';
 import { JwtGuard } from 'src/common/guards';
 import { CurrentUserId } from 'src/common/decorators/current-user-id.decorator';
 import { ConditionData } from 'src/condition/response';
+import { CurrentUserRole } from 'src/common/decorators';
 
 @Controller('feed-increase-condition')
 @ApiBearerAuth()
@@ -23,8 +24,8 @@ export class FeedIncreaseConditionController {
     @Get('/:id')
     @ApiOperation({ summary: 'Get feed increase condition detail by ID' })
     @ApiResponse({ status: 200, type: FeedIncreaseConditionResponse })
-    async getFeedIncreaseCondition(@Param('id') id: string, @CurrentUserId() userId: string): Promise<FeedIncreaseConditionResponse> {
-        return this.feedIncreaseConditionService.getFeedIncreaseCondition(id, userId);
+    async getFeedIncreaseCondition(@Param('id') id: string, @CurrentUserId() userId: string, @CurrentUserRole() role: string): Promise<FeedIncreaseConditionResponse> {
+        return this.feedIncreaseConditionService.getFeedIncreaseCondition(id, userId, role);
     }
 
     @Patch('/:id')

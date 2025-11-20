@@ -32,13 +32,13 @@ export class ConditionService {
         }
     }
 
-    async getAllTankConditions(userId: string, tankId: string): Promise<ConditionsListResponse> {
+    async getAllTankConditions(tankId: string): Promise<ConditionsListResponse> {
         try {
 
-            let feedingConditionsQuery = this.prisma.condition.findMany({ where: { type: 'FEEDING', tank: { userId, id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
-            let alertConditionsQuery = this.prisma.condition.findMany({ where: { type: 'ALERT', tank: { userId, id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
-            let recurringConditionsQuery = this.prisma.recurringCondition.findMany({ where: { tank: { userId, id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
-            let feedIncreaseConditionsQuery = this.prisma.feedIncreaseCondition.findMany({ where: { tank: { userId, id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
+            let feedingConditionsQuery = this.prisma.condition.findMany({ where: { type: 'FEEDING', tank: {  id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
+            let alertConditionsQuery = this.prisma.condition.findMany({ where: { type: 'ALERT', tank: {  id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
+            let recurringConditionsQuery = this.prisma.recurringCondition.findMany({ where: { tank: {  id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
+            let feedIncreaseConditionsQuery = this.prisma.feedIncreaseCondition.findMany({ where: { tank: {  id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
             let [feedingConditions, alertConditions, recurringConditions, feedIncreaseConditions] = await Promise.all([feedingConditionsQuery, alertConditionsQuery, recurringConditionsQuery, feedIncreaseConditionsQuery])
 
             return {
@@ -53,9 +53,10 @@ export class ConditionService {
         }
     }
 
-    async getFeedingConditionDetail(id: string, userId: string): Promise<FeedingConditionDetailResponse> {
+    async getFeedingConditionDetail(id: string, userId: string, role:string): Promise<FeedingConditionDetailResponse> {
         try {
-            let condition = await this.prisma.condition.findUnique({ where: { id, tank: { userId } }, include: { tank: true } });
+            let whereClause = role === 'ADMIN' ? { id } : { id, tank: { userId } };
+            let condition = await this.prisma.condition.findUnique({ where: whereClause, include: { tank: true } });
             if (!condition) throw new HttpException('Condition not found', 404);
             return {
                 id: condition.id,
@@ -148,9 +149,10 @@ export class ConditionService {
     }
 
     // section 2: Warning condition
-    async getAlertConditionDetail(id: string, userId: string): Promise<AlertConditionDetailResponse> {
+    async getAlertConditionDetail(id: string, userId: string, role:string): Promise<AlertConditionDetailResponse> {
         try {
-            let condition = await this.prisma.condition.findUnique({ where: { id, tank: { userId } }, include: { tank: true } });
+            let whereClause = role === 'ADMIN' ? { id } : { id, tank: { userId } };
+            let condition = await this.prisma.condition.findUnique({ where: whereClause, include: { tank: true } });
             if (!condition) throw new NotFoundException('Condition not found');
             return {
                 id: condition.id,

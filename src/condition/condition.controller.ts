@@ -5,7 +5,7 @@ import { AlertConditionDetailResponse, ConditionData, ConditionsListResponse, Fe
 import { AlertConditionDto, CopyConditionDto, CreateFeedingConditionDto, UpdateFeedingConditionDto } from './dto';
 import { MessageResponse } from 'src/common/response';
 import { JwtGuard, RoleGuard } from 'src/common/guards';
-import { CurrentUserId, Roles } from 'src/common/decorators';
+import { CurrentUserId, CurrentUserRole, Roles } from 'src/common/decorators';
 
 @Controller('condition')
 @ApiBearerAuth()
@@ -23,13 +23,14 @@ export class ConditionController {
             throw new Error('Method not implemented.');
         }
     }
-    @Get('/admin/all')
+
+    @Get('/admin/all/:id')
     @Roles('ADMIN')
     @ApiOperation({ summary: 'Get all conditions' })
     @ApiResponse({ status: 200, type: ConditionsListResponse })
-    async getAllTankConditions(@Query('userId') userId: string, @Query('tankId') tankId: string): Promise<ConditionsListResponse> {
+    async getAllTankConditions(@Param('id') id: string): Promise<ConditionsListResponse> {
 
-        return await this.conditionService.getAllTankConditions(userId, tankId);
+        return await this.conditionService.getAllTankConditions(id);
 
     }
 
@@ -37,8 +38,8 @@ export class ConditionController {
     @Get('/feeding-condition/:id')
     @ApiResponse({ status: 200, type: FeedingConditionDetailResponse })
     @ApiOperation({ summary: 'Get feeding condition by ID' })
-    async getConditionDetail(@Param('id') id: string, @CurrentUserId() userId: string): Promise<FeedingConditionDetailResponse> {
-        return this.conditionService.getFeedingConditionDetail(id, userId);
+    async getConditionDetail(@Param('id') id: string, @CurrentUserId() userId: string, @CurrentUserRole() role: string): Promise<FeedingConditionDetailResponse> {
+        return this.conditionService.getFeedingConditionDetail(id, userId, role);
     }
 
     @Post('/feeding-condition')
@@ -66,8 +67,8 @@ export class ConditionController {
     @Get('/alert-condition/:id')
     @ApiOperation({ summary: 'Get alert condition by ID' })
     @ApiResponse({ status: 200, type: AlertConditionDetailResponse })
-    async getAlertConditionDetail(@Param('id') id: string, @CurrentUserId() userId: string) {
-        return this.conditionService.getAlertConditionDetail(id, userId);
+    async getAlertConditionDetail(@Param('id') id: string, @CurrentUserId() userId: string, @CurrentUserRole() role: string) {
+        return this.conditionService.getAlertConditionDetail(id, userId,role);
     }
 
     @Post('/alert-condition')

@@ -151,11 +151,13 @@ export class FeedIncreaseConditionService {
   async getFeedIncreaseCondition(
     id: string,
     userId: string,
+    role: string
   ): Promise<FeedIncreaseConditionResponse> {
     try {
+      let whereClause = role === 'ADMIN' ? { id } : { id, tank: { userId } };
       let feedIncreaseCondition =
         await this.prisma.feedIncreaseCondition.findUnique({
-          where: { id, tank: { userId } },
+          where: whereClause,
           include: { tank: true },
         });
       if (!feedIncreaseCondition) {

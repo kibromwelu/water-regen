@@ -170,11 +170,13 @@ export class RecurringConditionService {
   async getDetailRecurringCondition(
     userId: string,
     id: string,
+    role: string
   ): Promise<GetRecurringConditionDetailResponse> {
     try {
+      let whereClause = role === 'ADMIN' ? { id } : { id, tank: { userId } };
       const existingRecurringCondition =
         await this.prisma.recurringCondition.findFirst({
-          where: { id: id, tank: { userId } },
+          where: whereClause,
           select: {
             id: true,
             name: true,
