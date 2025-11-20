@@ -5,7 +5,7 @@ import { AlertConditionDto, CopyConditionDto, CreateFeedingConditionDto, UpdateF
 import { MessageResponse } from 'src/common/response';
 import { dot } from 'node:test/reporters';
 import { RecurringConditionService } from 'src/recurring-condition/recurring-condition.service';
-import { utcToKorea } from 'src/common/utils';
+import { getKoreaDate, utcToKorea } from 'src/common/utils';
 
 @Injectable()
 export class ConditionService {
@@ -236,7 +236,7 @@ export class ConditionService {
     }
 
     async copyConditionsToTank(data: CopyConditionDto): Promise<MessageResponse> {
-        try {
+        try {        
             const { conditionId, targetTankId, type } = data;
 
             if (type === 'FEEDING' || type === 'ALERT') {
@@ -245,9 +245,9 @@ export class ConditionService {
                 if (!condition) {
                     throw new NotFoundException('Condition not found');
                 }
-                if (condition.tankId == targetTankId) {
-                    throw new HttpException('Cannot copy condition to the same tank', 400);
-                }
+                // if (condition.tankId == targetTankId) {
+                //     throw new HttpException('Cannot copy condition to the same tank', 400);
+                // }
                 await this.prisma.condition.create({
                     data: {
                         name: condition.name,
@@ -263,21 +263,26 @@ export class ConditionService {
             }
             else if (type === 'RECURRING') {
                 const recurringCondition = await this.prisma.recurringCondition.findUnique({ where: { id: conditionId }, include: { tank: true } });
-                if (recurringCondition?.tankId == targetTankId) {
-                    throw new HttpException('Cannot copy condition to the same tank', 400);
-                }
+                
                 if (!recurringCondition) {
                     throw new NotFoundException('Recurring Condition not found');
                 }
+                // if (recurringCondition.tankId == targetTankId) {
+                //     throw new HttpException('Cannot copy condition to the same tank', 400);
+                // }
+                let targetTank = await this.prisma.tank.findUnique({ where: { id: targetTankId } });
+                if (!targetTank) {
+                    throw new NotFoundException('Target tank not found');
+                }
                 await this.recurringConditionService.createRecurringCondition(
-                    recurringCondition.tank.userId, {
+                    targetTank.userId, {
                     name: recurringCondition.name,
                     tankId: targetTankId,
                     intervalType: recurringCondition.intervalType,
                     intervalValue: recurringCondition.intervalValue,
                     message: recurringCondition.message,
                     endingCount: recurringCondition.endingCount ?? undefined,
-                    endDate: recurringCondition.endDate ? utcToKorea(recurringCondition.endDate.toISOString()) : undefined,
+                    endDate: recurringCondition.endDate ? getKoreaDate(utcToKorea(recurringCondition.endDate.toISOString()) ): undefined,
                 })
                 // await this.prisma.recurringCondition.create({
                 //     data: {
@@ -295,12 +300,13 @@ export class ConditionService {
             }
             else if (type === 'FEED_INCREASE') {
                 const feedIncreaseCondition = await this.prisma.feedIncreaseCondition.findUnique({ where: { id: conditionId } });
-                if (feedIncreaseCondition?.tankId == targetTankId) {
-                    throw new HttpException('Cannot copy condition to the same tank', 400);
-                }
+                
                 if (!feedIncreaseCondition) {
                     throw new NotFoundException('Feed Increase Condition not found');
                 }
+                // if (feedIncreaseCondition?.tankId == targetTankId) {
+                //     throw new HttpException('Cannot copy condition to the same tank', 400);
+                // }
                 await this.prisma.feedIncreaseCondition.create({
                     data: {
                         name: feedIncreaseCondition.name,

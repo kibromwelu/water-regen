@@ -28,6 +28,7 @@ export class RecurringConditionService {
     dto: CreateRecurringConditionDto,
   ): Promise<ConditionData> {
     try {
+      
       if(dto.endDate && dto.endingCount){
         // only accept endDate if both are provided
         dto.endingCount = undefined;
@@ -45,7 +46,7 @@ export class RecurringConditionService {
       });
 
       if (!existingTank) {
-        throw new NotFoundException('Recurring condition not found');
+        throw new NotFoundException('Tank not found');
       }
 
       // Use Prisma transaction
