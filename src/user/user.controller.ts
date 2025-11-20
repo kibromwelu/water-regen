@@ -226,7 +226,7 @@ export class UserController {
   }
 
   @Patch('admin/update-role/:id')
-  // @Roles('ADMIN')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Update user role', })
   @ApiResponse({ status: HttpStatus.OK, type: GetUserRoleResponse })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User not found' })
