@@ -1,16 +1,20 @@
 import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AlertConditionDetailResponse, ConditionData, ConditionsListResponse, FeedingConditionDetailResponse } from './response';
-import { AlertConditionDto, CopyConditionDto, CreateFeedingConditionDto, UpdateFeedingConditionDto } from './dto';
+import { AlertConditionDto, CopyConditionDto, CreateFeedingConditionDto, FeedSensorType, UpdateFeedingConditionDto } from './dto';
 import { MessageResponse } from 'src/common/response';
 import { dot } from 'node:test/reporters';
 import { RecurringConditionService } from 'src/recurring-condition/recurring-condition.service';
 import { getKoreaDate, utcToKorea } from 'src/common/utils';
+import { FeedIncreaseConditionService } from 'src/feed-increase-condition/feed-increase-condition.service';
 
 @Injectable()
 export class ConditionService {
 
-    constructor(private readonly prisma: PrismaService, private readonly recurringConditionService: RecurringConditionService) { }
+    constructor(private readonly prisma: PrismaService,
+        private readonly recurringConditionService: RecurringConditionService,
+        private readonly feedIncreaseConditionService: FeedIncreaseConditionService
+    ) { }
 
     async getAllConditions(userId: string): Promise<ConditionsListResponse> {
         try {
@@ -35,10 +39,10 @@ export class ConditionService {
     async getAllTankConditions(tankId: string): Promise<ConditionsListResponse> {
         try {
 
-            let feedingConditionsQuery = this.prisma.condition.findMany({ where: { type: 'FEEDING', tank: {  id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
-            let alertConditionsQuery = this.prisma.condition.findMany({ where: { type: 'ALERT', tank: {  id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
-            let recurringConditionsQuery = this.prisma.recurringCondition.findMany({ where: { tank: {  id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
-            let feedIncreaseConditionsQuery = this.prisma.feedIncreaseCondition.findMany({ where: { tank: {  id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
+            let feedingConditionsQuery = this.prisma.condition.findMany({ where: { type: 'FEEDING', tank: { id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
+            let alertConditionsQuery = this.prisma.condition.findMany({ where: { type: 'ALERT', tank: { id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
+            let recurringConditionsQuery = this.prisma.recurringCondition.findMany({ where: { tank: { id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
+            let feedIncreaseConditionsQuery = this.prisma.feedIncreaseCondition.findMany({ where: { tank: { id: tankId } }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } })
             let [feedingConditions, alertConditions, recurringConditions, feedIncreaseConditions] = await Promise.all([feedingConditionsQuery, alertConditionsQuery, recurringConditionsQuery, feedIncreaseConditionsQuery])
 
             return {
@@ -53,7 +57,7 @@ export class ConditionService {
         }
     }
 
-    async getFeedingConditionDetail(id: string, userId: string, role:string): Promise<FeedingConditionDetailResponse> {
+    async getFeedingConditionDetail(id: string, userId: string, role: string): Promise<FeedingConditionDetailResponse> {
         try {
             let whereClause = role === 'ADMIN' ? { id } : { id, tank: { userId } };
             let condition = await this.prisma.condition.findUnique({ where: whereClause, include: { tank: true } });
@@ -149,7 +153,7 @@ export class ConditionService {
     }
 
     // section 2: Warning condition
-    async getAlertConditionDetail(id: string, userId: string, role:string): Promise<AlertConditionDetailResponse> {
+    async getAlertConditionDetail(id: string, userId: string, role: string): Promise<AlertConditionDetailResponse> {
         try {
             let whereClause = role === 'ADMIN' ? { id } : { id, tank: { userId } };
             let condition = await this.prisma.condition.findUnique({ where: whereClause, include: { tank: true } });
@@ -173,7 +177,7 @@ export class ConditionService {
             if (!tank) throw new HttpException('Tank not found', 404);
             //let message = `${tank.name}의 ${dto.sensor}가 ${dto.value} 이상입니다. 즉시 확인 바랍니다.`;
             let message;
-            let sensorName = dto.sensor == 'WATER_TEMPERATURE' ? '수온' : dto.sensor=='BIO_FORMULA_INDEX1' ? 'BioFormula Index 1': dto.sensor=='BIO_FORMULA_INDEX2' ? 'BioFormula Index 2': dto.sensor=='BIO_FORMULA_INDEX3' ? 'BioFormula Index 3': dto.sensor;
+            let sensorName = dto.sensor == 'WATER_TEMPERATURE' ? '수온' : dto.sensor == 'BIO_FORMULA_INDEX1' ? 'BioFormula Index 1' : dto.sensor == 'BIO_FORMULA_INDEX2' ? 'BioFormula Index 2' : dto.sensor == 'BIO_FORMULA_INDEX3' ? 'BioFormula Index 3' : dto.sensor;
             if (dto.condition == 'GTE') {
                 message = `${tank.name}의 ${sensorName}(이)가 ${dto.value} 이상입니다. 조치가 필요합니다.`
             } else if (dto.condition == 'LTE') {
@@ -183,7 +187,7 @@ export class ConditionService {
             } else if (dto.condition == 'LT') {
                 message = `${tank.name}의 ${sensorName}(이)가 ${dto.value}보다 작습니다. 조치가 필요합니다.`
             }
-            
+
             let condition = await this.prisma.condition.create({ data: { ...dto, message, type: 'ALERT' } });
             return {
                 id: condition.id,
@@ -202,7 +206,7 @@ export class ConditionService {
             if (!condition) throw new NotFoundException('Condition not found');
 
             let message;
-            let sensorName = dto.sensor == 'WATER_TEMPERATURE' ? '수온' : dto.sensor=='BIO_FORMULA_INDEX1' ? 'BioFormula Index 1': dto.sensor=='BIO_FORMULA_INDEX2' ? 'BioFormula Index 2': dto.sensor=='BIO_FORMULA_INDEX3' ? 'BioFormula Index 3': dto.sensor;
+            let sensorName = dto.sensor == 'WATER_TEMPERATURE' ? '수온' : dto.sensor == 'BIO_FORMULA_INDEX1' ? 'BioFormula Index 1' : dto.sensor == 'BIO_FORMULA_INDEX2' ? 'BioFormula Index 2' : dto.sensor == 'BIO_FORMULA_INDEX3' ? 'BioFormula Index 3' : dto.sensor;
             if (dto.condition == 'GTE') {
                 message = `${tank.name}의 ${sensorName}(이)가 ${dto.value} 이상입니다. 조치가 필요합니다.`
             } else if (dto.condition == 'LTE') {
@@ -222,7 +226,7 @@ export class ConditionService {
             throw new HttpException(error.message, error.status || 500);
         }
     }
-    
+
     async deleteAlertCondition(id: string, userId: string): Promise<MessageResponse> {
         try {
             let condition = await this.prisma.condition.findUnique({ where: { id, tank: { userId } } });
@@ -236,7 +240,7 @@ export class ConditionService {
     }
 
     async copyConditionsToTank(data: CopyConditionDto): Promise<MessageResponse> {
-        try {        
+        try {
             const { conditionId, targetTankId, type } = data;
 
             if (type === 'FEEDING' || type === 'ALERT') {
@@ -248,22 +252,45 @@ export class ConditionService {
                 // if (condition.tankId == targetTankId) {
                 //     throw new HttpException('Cannot copy condition to the same tank', 400);
                 // }
-                await this.prisma.condition.create({
-                    data: {
+                let targetTank = await this.prisma.tank.findUnique({ where: { id: targetTankId } });
+                if (!targetTank) {
+                    throw new NotFoundException('Target tank not found');
+                }
+                if (type == 'FEEDING') {
+                    await this.createFeedingCondition({
                         name: condition.name,
                         tankId: targetTankId,
-                        sensor: condition.sensor,
+                        sensor: condition.sensor as FeedSensorType,
                         value: condition.value,
                         condition: condition.condition,
-                        recommendation: condition.recommendation,
-                        message: condition.message,
-                        type: condition.type,
-                    }
-                });
+                        recommendation: condition.recommendation as string,
+                    }, targetTank.userId)
+                }
+                else if (type == 'ALERT') {
+                    await this.createAlertCondition({
+                        name: condition.name,
+                        tankId: targetTankId,
+                        sensor: condition.sensor as FeedSensorType,
+                        value: condition.value,
+                        condition: condition.condition,
+                    }, targetTank.userId)
+                }
+                // await this.prisma.condition.create({
+                //     data: {
+                //         name: condition.name,
+                //         tankId: targetTankId,
+                //         sensor: condition.sensor,
+                //         value: condition.value,
+                //         condition: condition.condition,
+                //         recommendation: condition.recommendation,
+                //         message: condition.message,
+                //         type: condition.type,
+                //     }
+                // });
             }
             else if (type === 'RECURRING') {
                 const recurringCondition = await this.prisma.recurringCondition.findUnique({ where: { id: conditionId }, include: { tank: true } });
-                
+
                 if (!recurringCondition) {
                     throw new NotFoundException('Recurring Condition not found');
                 }
@@ -282,7 +309,7 @@ export class ConditionService {
                     intervalValue: recurringCondition.intervalValue,
                     message: recurringCondition.message,
                     endingCount: recurringCondition.endingCount ?? undefined,
-                    endDate: recurringCondition.endDate ? getKoreaDate(utcToKorea(recurringCondition.endDate.toISOString()) ): undefined,
+                    endDate: recurringCondition.endDate ? getKoreaDate(utcToKorea(recurringCondition.endDate.toISOString())) : undefined,
                 })
                 // await this.prisma.recurringCondition.create({
                 //     data: {
@@ -300,24 +327,29 @@ export class ConditionService {
             }
             else if (type === 'FEED_INCREASE') {
                 const feedIncreaseCondition = await this.prisma.feedIncreaseCondition.findUnique({ where: { id: conditionId } });
-                
+
                 if (!feedIncreaseCondition) {
                     throw new NotFoundException('Feed Increase Condition not found');
                 }
                 // if (feedIncreaseCondition?.tankId == targetTankId) {
                 //     throw new HttpException('Cannot copy condition to the same tank', 400);
                 // }
-                await this.prisma.feedIncreaseCondition.create({
-                    data: {
-                        name: feedIncreaseCondition.name,
-                        tankId: targetTankId,
-                        dailyMessageSentCount: 0,
-                        referenceTime: feedIncreaseCondition.referenceTime,
-                        expectedFeedAmount: feedIncreaseCondition.expectedFeedAmount,
-                        totalMessageSent: 0,
-                        // lastMessageSent: new Date()
-                    }
-                });
+                // await this.prisma.feedIncreaseCondition.create({
+                //     data: {
+                //         name: feedIncreaseCondition.name,
+                //         tankId: targetTankId,
+                //         dailyMessageSentCount: 0,
+                //         referenceTime: feedIncreaseCondition.referenceTime,
+                //         expectedFeedAmount: feedIncreaseCondition.expectedFeedAmount,
+                //         totalMessageSent: 0,
+                //         // lastMessageSent: new Date()
+                //     }
+                // });
+                await this.feedIncreaseConditionService.createFeedIncreaseCondition({
+                    name: feedIncreaseCondition.name,
+                    tankId: targetTankId,
+                    referenceTime: feedIncreaseCondition.referenceTime,
+                })
             }
             return { message: "Conditions copied successfully" };
         } catch (error) {

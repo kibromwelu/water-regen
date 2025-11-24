@@ -4,6 +4,7 @@ import { FeedIncreaseConditionService } from './feed-increase-condition.service'
 
 @Module({
   controllers: [FeedIncreaseConditionController],
-  providers: [FeedIncreaseConditionService]
+  providers: [FeedIncreaseConditionService],
+  exports: [FeedIncreaseConditionService]
 })
-export class FeedIncreaseConditionModule {}
+export class FeedIncreaseConditionModule { }
