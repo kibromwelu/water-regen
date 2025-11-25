@@ -6,6 +6,7 @@ services:
       - ./dev/nginx:/etc/nginx/conf.d
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
+      - ./landing:/var/www/landing
     ports:
       - "80:80"
       - "443:443"

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WaterRegen - 스마트 양식장 관리 솔루션</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: #231916;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo svg {
+            height: 50px;
+            width: auto;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+            opacity: 0.95;
+        }
+
+        .hero .subtitle {
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+            background-color: #ffffff;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 50px;
+            color: #1565c0;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #1565c0;
+        }
+
+        .feature-card p {
+            color: #555;
+            line-height: 1.7;
+        }
+
+        /* Screenshots Section */
+        .screenshots {
+            padding: 80px 0;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e3f2fd 100%);
+        }
+
+        .screenshots-container {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding: 20px 0;
+            scroll-behavior: smooth;
+        }
+
+        .screenshot-item {
+            flex: 0 0 auto;
+            text-align: center;
+            width: 280px;
+        }
+
+        .screenshot-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
+        }
+
+        .screenshot-item img:hover {
+            transform: scale(1.05);
+        }
+
+        .screenshot-label {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1565c0;
+        }
+
+        /* App Info Section */
+        .app-info {
+            padding: 60px 0;
+            background-color: #ffffff;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            text-align: center;
+        }
+
+        .info-item {
+            padding: 20px;
+        }
+
+        .info-item h4 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #1565c0;
+        }
+
+        .info-item p {
+            color: #666;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #231916;
+            color: #ffffff;
+            padding: 50px 0 30px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+
+        .footer-section h3 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #1e88e5;
+        }
+
+        .footer-section p {
+            margin-bottom: 10px;
+            color: #ddd;
+            font-size: 0.95rem;
+            line-height: 1.8;
+        }
+
+        .footer-section a {
+            color: #64b5f6;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-section a:hover {
+            color: #1e88e5;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid #444;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .screenshot-item {
+                width: 240px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="logo">
+                <svg width="236" height="77" viewBox="0 0 236 77" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g clip-path="url(#clip0_13144_29251)">
+                    <path d="M116.67 0.171875H108.6L102.341 19.3826L96.3039 0.171875H88.5333L82.2064 19.2029L76.1943 0.171875H67.4844L77.1763 29.9889H86.2705L92.1865 11.7859L97.9264 29.9889H106.978L116.67 0.171875Z" fill="#231916"/>
+                    <path d="M132.382 8.44345L136.216 17.9769H128.547L132.382 8.44345ZM123.714 29.989L126.061 24.1533H138.702L141.049 29.989H149.844L136.608 0.171875H128.284L115.09 29.989H123.714Z" fill="#231916"/>
+                    <path d="M147.924 6.85942H157.104V29.9889H165.558V6.85942H174.694V0.171875H147.924V6.85942Z" fill="#231916"/>
+                    <path d="M186.221 17.9769H199.5V11.7167H186.221V6.73296H201.293V0.171875H177.897V29.989H201.848V23.4305H186.221V17.9769Z" fill="#231916"/>
+                    <path d="M215.042 6.81682H219.694C221.461 6.81682 222.783 7.20817 223.666 7.98821C224.548 8.76958 224.99 9.82782 224.99 11.1629C224.99 12.5539 224.548 13.6322 223.666 14.3989C222.783 15.1656 221.461 15.5503 219.694 15.5503H215.042V6.81682ZM215.042 22.0661H219.613L225.031 29.989H234.083L227.625 20.5992C229.449 19.742 230.879 18.564 231.885 17.0412C232.952 15.4212 233.485 13.4618 233.485 11.1629C233.485 8.91866 232.952 6.96591 231.885 5.30467C230.816 3.64344 229.287 2.37355 227.295 1.49235C225.302 0.612476 222.94 0.171875 220.208 0.171875H206.588V29.989H215.042V22.0661Z" fill="#231916"/>
+                    <path d="M82.8556 62.5327H76.3659V50.6484H82.8556C85.3026 50.6484 87.1465 51.1676 88.3847 52.2032C89.6215 53.2415 90.2419 54.695 90.2419 56.5706C90.2419 58.4435 89.6215 59.9064 88.3847 60.9566C87.1465 62.0069 85.3026 62.5327 82.8556 62.5327ZM89.9217 65.8125C91.8137 64.9606 93.2733 63.7546 94.298 62.1919C95.3227 60.6305 95.8351 58.7563 95.8351 56.5706C95.8351 54.3543 95.3227 52.4521 94.298 50.8614C93.2733 49.2721 91.8137 48.0581 89.9217 47.2195C88.0284 46.3822 85.7589 45.9629 83.1104 45.9629H70.8154V75.78H76.3659V67.0904H83.1104C83.5107 67.0904 83.8843 67.0611 84.2659 67.0425L90.37 75.78H96.3461L89.4654 65.9829C89.6149 65.923 89.7763 65.8778 89.9217 65.8125Z" fill="#231916"/>
+                    <path d="M111.845 62.916H126.276V58.3583H111.845V50.6484H128.112V45.9629H106.295V75.78H128.71V71.0958H111.845V62.916Z" fill="#231916"/>
+                    <path d="M145.66 53.3318C146.627 52.3947 147.773 51.6706 149.097 51.1594C150.42 50.6483 151.879 50.3927 153.472 50.3927C155.095 50.3927 156.583 50.6696 157.935 51.2233C159.286 51.777 160.546 52.6356 161.713 53.8003L165.214 50.3927C163.819 48.8033 162.104 47.596 160.069 46.772C158.033 45.9494 155.764 45.5381 153.26 45.5381C150.869 45.5381 148.698 45.9148 146.748 46.6655C144.799 47.419 143.09 48.4905 141.625 49.8815C140.159 51.2739 139.027 52.8925 138.231 54.7388C137.433 56.5837 137.035 58.6283 137.035 60.8713C137.035 63.1155 137.433 65.1601 138.231 67.0051C139.027 68.8513 140.152 70.47 141.604 71.861C143.055 73.2533 144.755 74.3249 146.706 75.077C148.655 75.829 150.798 76.2057 153.131 76.2057C155.266 76.2057 157.358 75.8863 159.408 75.2473C161.457 74.6084 163.25 73.6646 164.787 72.4147V60.5731H159.578V69.7924C158.971 70.1412 158.354 70.4314 157.721 70.647C156.34 71.1155 154.91 71.3498 153.43 71.3498C151.836 71.3498 150.384 71.0956 149.075 70.5831C147.765 70.0719 146.627 69.3478 145.66 68.4107C144.691 67.4736 143.937 66.3595 143.397 65.0669C142.855 63.7758 142.586 62.3767 142.586 60.8713C142.586 59.3391 142.855 57.9321 143.397 56.6543C143.937 55.3764 144.691 54.2689 145.66 53.3318Z" fill="#231916"/>
+                    <path d="M181.95 62.916H196.381V58.3583H181.95V50.6484H198.217V45.9629H176.399V75.78H198.815V71.0958H181.95V62.916Z" fill="#231916"/>
+                    <path d="M230.325 45.9629V66.1879L213.843 45.9629H209.276V75.78H214.784V55.5603L231.222 75.78H235.79V45.9629H230.325Z" fill="#231916"/>
+                    <path d="M16.436 44.3321H22.1693L16.436 61.9748L34.531 44.3321H29.214L34.531 26.6895L16.436 44.3321Z" fill="#231916"/>
+                    <path d="M45.3874 32.8927C41.258 25.1309 36.8376 17.5049 32.5334 9.82569C31.1324 7.32718 30.025 4.73948 29.6461 1.90819C29.4806 0.664925 28.5533 -0.109786 27.4352 0.0126767C26.2331 0.145789 25.4672 1.11085 25.6714 2.41268C25.8702 3.6666 25.9756 4.99905 26.52 6.12518C28.3866 9.98942 30.3132 13.835 32.4253 17.5835C36.5294 24.8647 40.9631 31.9888 44.0585 39.7386C46.0946 44.8368 47.5529 50.0122 46.4708 55.551C44.4094 66.1107 32.9323 73.573 21.8421 71.5217C9.42702 69.2269 1.97263 58.5673 4.60909 46.8841C6.00603 40.6864 8.76524 34.9799 11.842 29.4118C15.0669 23.5762 18.4745 17.8284 21.7874 12.0353C22.4906 10.8054 22.2517 9.71387 21.2324 9.14682C20.161 8.55181 18.9882 8.86462 18.3091 10.0733C13.8914 17.9442 9.37766 25.7712 5.15612 33.7353C2.53034 38.691 0.610372 43.9489 0.0980242 49.5277C-1.19352 63.5989 10.4397 75.555 25.4245 75.78C27.3552 75.5324 29.3125 75.4006 31.2138 75.0186C43.7543 72.4935 52.5389 60.4974 50.7311 48.6105C49.8878 43.0691 48.0185 37.8378 45.3874 32.8927Z" fill="#231916"/>
+                    </g>
+                    <defs>
+                    <clipPath id="clip0_13144_29251">
+                    <rect width="236" height="76.3529" fill="white"/>
+                    </clipPath>
+                    </defs>
+                </svg>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>WaterRegen</h1>
+            <p>스마트 양식장 관리 솔루션</p>
+            <p class="subtitle">이제부터 양식 현황과 사육관리 정보를 편하게 확인 및 입력할 수 있어요!<br>
+            실시간 수질 모니터링과 데이터 기반 양식장 관리로 더 나은 수확을 경험하세요.</p>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">주요 기능</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>실시간 수질 모니터링</h3>
+                    <p>pH, 용존산소(DO), 알칼리도(ALK), 암모니아(NH4), 아질산염(NO2), 수온 등 핵심 수질 파라미터를 실시간으로 모니터링하고 차트로 확인하세요.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🦐</div>
+                    <h3>양식 탱크 관리</h3>
+                    <p>여러 양식 탱크를 손쉽게 등록하고 관리하세요. 새우 품종, 평균 체중, 입식 마리수 등 상세 정보를 기록하고 추적할 수 있습니다.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <h3>사육 데이터 입력</h3>
+                    <p>일일 사육 활동, 급이 정보, 보충제 투여량을 간편하게 기록하세요. 다양한 사료 유형과 맞춤형 보충제 관리가 가능합니다.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>수확 예측</h3>
+                    <p>현재 데이터를 기반으로 예상 수확량(kg)과 마리수를 계산하고, 양식일수(DOC)를 추적하여 최적의 수확 시기를 결정하세요.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔔</div>
+                    <h3>스마트 알림</h3>
+                    <p>수질 파라미터가 안전 범위를 벗어나면 자동으로 알림을 받고, 보충제 투여 권장사항과 급이량 증량 시점을 안내받으세요.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>편리한 접근성</h3>
+                    <p>iOS와 Android 모두 지원하며, 한국어와 영어를 제공합니다. 언제 어디서나 스마트폰으로 양식장을 관리하세요.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshots Section -->
+    <section class="screenshots">
+        <div class="container">
+            <h2 class="section-title">앱 화면</h2>
+            <div class="screenshots-container">
+                <div class="screenshot-item">
+                    <img src="app_images/1.png" alt="로그인 화면">
+                    <div class="screenshot-label">로그인</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="app_images/2.png" alt="양식 현황 대시보드">
+                    <div class="screenshot-label">양식 현황 대시보드</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="app_images/3.png" alt="마이페이지">
+                    <div class="screenshot-label">마이페이지</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="app_images/4.png" alt="수조 정보 추가">
+                    <div class="screenshot-label">수조 정보 추가</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="app_images/5.png" alt="조건 설정">
+                    <div class="screenshot-label">조건 설정</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- App Info Section -->
+    <section class="app-info">
+        <div class="container">
+            <h2 class="section-title">앱 정보</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <h4>플랫폼</h4>
+                    <p>iOS & Android</p>
+                </div>
+                <div class="info-item">
+                    <h4>소셜 로그인</h4>
+                    <p>Google, Kakao, Apple</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>회사 정보</h3>
+                    <p><strong>WaterRegen</strong></p>
+                    <p>대표자: 홍성훈</p>
+                    <p>사업자등록번호: 673-03-03280</p>
+                </div>
+
+                <div class="footer-section">
+                    <h3>본사 위치</h3>
+                    <p>경상북도 칠곡군 지천면 금호리639 사무실</p>
+                    <p>Gyeongsangbuk-do, Korea</p>
+                </div>
+
+                <div class="footer-section">
+                    <h3>문의</h3>
+                    <p>개인정보보호책임자: 홍성훈</p>
+                    <p>고객지원: <a href="mailto:fishking930517@gmail.com">fishking930517@gmail.com</a></p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2025 WaterRegen. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

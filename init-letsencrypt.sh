@@ -5,7 +5,7 @@ if ! [ -x "$(command -v docker compose)" ]; then
   exit 1
 fi
 
-domains=(api.waterregen.kr) # TODO 도메인 입력
+domains=(www.waterregen.kr waterregen.kr api.waterregen.kr)
 
 rsa_key_size=4096
 data_path="./data/certbot"
