@@ -111,7 +111,11 @@ export class UserService {
         }
       }
 
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      let code = '123456'; // temporary for testing;
+      if (phoneNumber != '01012345678') { // '01012345678' is a test number so it will have a fixed code
+        code = Math.floor(100000 + Math.random() * 900000).toString();
+      }
+      // const code = Math.floor(100000 + Math.random() * 900000).toString();
       // const code = '123456'; // temporary for testing
 
       // save verification code
@@ -128,8 +132,10 @@ export class UserService {
         },
       });
 
-      // Send SMS
-      const sms = await this.smsService.sendOtpSms(phoneNumber, code)
+      if (phoneNumber != '01012345678') {  // '01012345678' is a test number so it will not send SMS
+        // Send SMS with the code
+        const sms = await this.smsService.sendOtpSms(phoneNumber, code);
+      }
 
       return {
         message: 'Verification code sent',
@@ -602,98 +608,100 @@ export class UserService {
   }
 
   async getUsersList(
-  dto: GetUsersListDto,
-  userId: string,
-  pagination: InfiniteScroll,
-): Promise<GetUserslistResponse> {
-  try {
-    const { limit, cursor } = pagination;
+    dto: GetUsersListDto,
+    userId: string,
+    pagination: InfiniteScroll,
+  ): Promise<GetUserslistResponse> {
+    try {
+      const { limit, cursor } = pagination;
 
-    // Base conditions
-    const where: any = {
-      status: 'ACTIVE',
-      id: { not: userId },
-    };
+      // Base conditions
+      const where: any = {
+        status: 'ACTIVE',
+        id: { not: userId },
+      };
 
-    const myDataCondition: any = {
-      status: 'ACTIVE',
-      id: userId,
-    };
+      const myDataCondition: any = {
+        status: 'ACTIVE',
+        id: userId,
+      };
 
-    const countCondition: any = {
-      status: 'ACTIVE',
-    };
+      const countCondition: any = {
+        status: 'ACTIVE',
+      };
 
-    // Apply search logic once
-    const applySearch = (obj: any) => {
-      obj.OR = [
-        { username: { contains: dto.search, mode: 'insensitive' } },
-        { phoneNumber: { contains: dto.search, mode: 'insensitive' } },
-      ];
-    };
+      // Apply search logic once
+      const applySearch = (obj: any) => {
+        obj.OR = [
+          { username: { contains: dto.search, mode: 'insensitive' } },
+          { phoneNumber: { contains: dto.search, mode: 'insensitive' } },
+        ];
+      };
 
-    if (dto.search) {
-      applySearch(where);
-      applySearch(myDataCondition);
-      applySearch(countCondition);
+      if (dto.search) {
+        applySearch(where);
+        applySearch(myDataCondition);
+        applySearch(countCondition);
+      }
+
+      // Fetch my own user data on first load
+      const myData = !cursor
+        ? await this.prisma.user.findUnique({
+            where: myDataCondition,
+            select: {
+              id: true,
+              username: true,
+              phoneNumber: true,
+              createdAt: true,
+              tanks: true,
+            },
+          })
+        : null;
+
+      // Adjust take: if myData exists, reserve one slot
+      const take = myData ? limit - 1 : limit;
+
+      const users = await this.prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          username: true,
+          phoneNumber: true,
+          createdAt: true,
+          tanks: true,
+        },
+        take,
+        skip: cursor ? 1 : 0,
+        cursor: cursor ? { id: cursor } : undefined,
+        orderBy: { createdAt: 'desc' },
+      });
+
+      // Prepend myData for first page
+      if (myData) {
+        users.unshift(myData);
+      }
+
+      const totalCount = await this.prisma.user.count({
+        where: countCondition,
+      });
+
+      return {
+        users: users.map((u) => ({
+          id: u.id,
+          username: u.username,
+          phoneNumber: u.phoneNumber,
+          createdAt: u.createdAt,
+          hasTank: u.tanks.length > 0,
+        })),
+        total: totalCount,
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-
-    // Fetch my own user data on first load
-    const myData = !cursor
-      ? await this.prisma.user.findUnique({
-          where: myDataCondition,
-          select: {
-            id: true,
-            username: true,
-            phoneNumber: true,
-            createdAt: true,
-            tanks: true,
-          },
-        })
-      : null;
-
-    // Adjust take: if myData exists, reserve one slot
-    const take = myData ? limit - 1 : limit;
-
-    const users = await this.prisma.user.findMany({
-      where,
-      select: {
-        id: true,
-        username: true,
-        phoneNumber: true,
-        createdAt: true,
-        tanks: true,
-      },
-      take,
-      skip: cursor ? 1 : 0,
-      cursor: cursor ? { id: cursor } : undefined,
-      orderBy: { createdAt: 'desc' },
-    });
-
-    // Prepend myData for first page
-    if (myData) {
-      users.unshift(myData);
-    }
-
-    const totalCount = await this.prisma.user.count({
-      where: countCondition,
-    });
-
-    return {
-      users: users.map((u) => ({
-        id: u.id,
-        username: u.username,
-        phoneNumber: u.phoneNumber,
-        createdAt: u.createdAt,
-        hasTank: u.tanks.length > 0,
-      })),
-      total: totalCount,
-    };
-  } catch (error) {
-    throw new HttpException(error.message, error.status || HttpStatus.INTERNAL_SERVER_ERROR);
   }
-}
-
 
   async updateUserRole(
     id: string,
@@ -737,7 +745,7 @@ export class UserService {
 
       if (dto.search) {
         // Apply search filter to username
-        where.username = { contains: dto.search, mode: 'insensitive' }
+        where.username = { contains: dto.search, mode: 'insensitive' };
       }
 
       const users = await this.prisma.user.findMany({
@@ -749,7 +757,7 @@ export class UserService {
         orderBy: { createdAt: 'desc' },
       });
 
-      return  users;
+      return users;
     } catch (error) {
       // Handle any errors
       const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
