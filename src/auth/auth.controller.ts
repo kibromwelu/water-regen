@@ -1,9 +1,9 @@
 import { Body, Controller, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { CheckUsernameDto, LoginDto, RefreshTokenDto, ResetPasswordDto, SignupDto, VerifyCodeDto, VerifyPhoneDto } from './dto';
+import { CheckUsernameDto, LoginDto, loginWithAppleDto, loginWithSocialDto, RefreshTokenDto, ResetPasswordDto, SignupDto, VerifyCodeDto, VerifyPhoneDto } from './dto';
 import { MessageResponse } from 'src/common/response';
-import { CheckUsernameResponse, LoginResponse, VerifyCodeResponse, VerifyFindAccountResponse } from './response';
+import { CheckUsernameResponse, LoginResponse, SocialLoginResponse, VerifyCodeResponse, VerifyFindAccountResponse } from './response';
 
 @Controller('auth')
 export class AuthController {
@@ -63,9 +63,9 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @Post('login/kakao')
     async loginWithKakao(
-        @Query('accessToken') accessToken: string
-    ): Promise<LoginResponse> {
-        return this.authService.loginWithKakao(accessToken);
+        @Body() dto: loginWithSocialDto,
+    ): Promise<SocialLoginResponse> {
+        return this.authService.loginWithKakao(dto);
     }
 
     @ApiOperation({ summary: 'Login with Naver' })
@@ -73,9 +73,9 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @Post('login/naver')
     async loginWithNaver(
-        @Query('accessToken') accessToken: string
-    ): Promise<LoginResponse> {
-        return this.authService.loginWithNaver(accessToken);
+        @Body() dto: loginWithSocialDto,
+    ): Promise<SocialLoginResponse> {
+        return this.authService.loginWithNaver(dto);
     }
 
     @ApiOperation({ summary: 'Login with Google' })
@@ -83,19 +83,29 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @Post('login/google')
     async loginWithGoogle(
-        @Query('accessToken') accessToken: string,
-    ): Promise<LoginResponse> {
-        return this.authService.loginWithGoogle(accessToken);
+        @Body() dto: loginWithSocialDto,
+    ): Promise<SocialLoginResponse> {
+        return this.authService.loginWithGoogle(dto);
     }
 
     @ApiOperation({ summary: 'Login with Apple' })
-    @ApiResponse({ status: 200, type: LoginResponse })
+    @ApiResponse({ status: 200, type: SocialLoginResponse })
     @HttpCode(HttpStatus.OK)
     @Post('login/apple')
     async loginWithApple(
-        @Query('identityToken') identityToken: string,
-    ): Promise<LoginResponse> {
-        return this.authService.loginWithApple(identityToken);
+        @Body() dto: loginWithAppleDto,
+    ): Promise<SocialLoginResponse> {
+        return this.authService.loginWithApple(dto);
+    }
+
+    @ApiOperation({ summary: 'Signup with Apple' })
+    @ApiResponse({ status: 200, type: SocialLoginResponse })
+    @HttpCode(HttpStatus.OK)
+    @Post('signup/apple/:id')
+    async signupWithApple(
+        @Param("id") id: string,
+    ): Promise<SocialLoginResponse> {
+        return this.authService.signupWithApple(id);
     }
 
     @ApiOperation({ summary: 'Find account by phone number', description: 'Initiate account recovery by sending a verification code to the provided phone number.' })

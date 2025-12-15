@@ -19,7 +19,7 @@ services:
       dockerfile: Dockerfile
     image: water-regen:latest
     ports:
-      - "3001:3001"
+      - "3000:3000"
     env_file: .env
     depends_on:
       - db

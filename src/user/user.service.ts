@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -17,6 +18,7 @@ import {
   GetUsersListDto,
   LogoutDto,
   SendVerficationCodeDto,
+  SetUsernameDto,
   VerifyVerifcationCodeDto,
 } from './dto';
 import {
@@ -72,6 +74,8 @@ export class UserService {
           NAVER: connectedProviders.includes('NAVER'),
         },
         isAdmin: user.role === 'ADMIN',
+        isRegisteredBySocial: user.registeredBySocialType ? true : false,
+        isPasswordSet: !!user.password,
       };
     } catch (error) {
       // Handle any errors
@@ -86,17 +90,17 @@ export class UserService {
   ): Promise<MessageResponse> {
     try {
       const existingUser = await this.prisma.user.findUnique({
-        where: { phoneNumber },
+        where: { id: userId },
       });
       if (
-        (!existingUser || existingUser.id != userId) &&
+        (!existingUser || existingUser.phoneNumber != phoneNumber) &&
         type === 'CHANGE_PASSWORD'
       ) {
         throw new BadRequestException('No user with this phone number');
       }
 
       if (existingUser && type === 'CHANGE_PHONE') {
-        if (existingUser.id === userId) {
+        if (existingUser.phoneNumber === phoneNumber) {
           throw new BadRequestException('This is your current phone number');
         } else {
           if (existingUser.status == 'PENDING') {
@@ -112,9 +116,10 @@ export class UserService {
       }
 
       let code = '123456'; // temporary for testing;
-      if (phoneNumber != '01012345678') { // '01012345678' is a test number so it will have a fixed code
-        code = Math.floor(100000 + Math.random() * 900000).toString();
-      }
+      // if (phoneNumber != '01012345678') {
+      //   // '01012345678' is a test number so it will have a fixed code
+      //   code = Math.floor(100000 + Math.random() * 900000).toString();
+      // }
       // const code = Math.floor(100000 + Math.random() * 900000).toString();
       // const code = '123456'; // temporary for testing
 
@@ -132,10 +137,11 @@ export class UserService {
         },
       });
 
-      if (phoneNumber != '01012345678') {  // '01012345678' is a test number so it will not send SMS
-        // Send SMS with the code
-        const sms = await this.smsService.sendOtpSms(phoneNumber, code);
-      }
+      // if (phoneNumber != '01012345678') {
+      //   // '01012345678' is a test number so it will not send SMS
+      //   // Send SMS with the code
+      //   const sms = await this.smsService.sendOtpSms(phoneNumber, code);
+      // }
 
       return {
         message: 'Verification code sent',
@@ -346,6 +352,38 @@ export class UserService {
     }
   }
 
+  async setUsername(
+    userId: string,
+    dto: SetUsernameDto,
+  ): Promise<MessageResponse> {
+    try {
+      let user = await this.prisma.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+      if (user.username) {
+        throw new BadRequestException('User already set its username');
+      }
+      let checkUsername = await this.prisma.user.findUnique({
+        where: { username: dto.username },
+      });
+      if (checkUsername) {
+        throw new BadRequestException('Username already in use');
+      }
+
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          username: dto.username,
+        },
+      });
+
+      return { message: 'Username set successfully' };
+    } catch (error) {
+      throw new HttpException(error.message, error.status || 500);
+    }
+  }
+
   async linkKakao(token: string, userId: string) {
     try {
       const accessToken = token?.replace('Bearer ', '');
@@ -356,6 +394,11 @@ export class UserService {
       let user = await this.prisma.user.findUnique({ where: { id: userId } });
       if (!user) {
         throw new NotFoundException('User not found');
+      }
+      if (user.registeredBySocialType) {
+        throw new ForbiddenException(
+          'Account created by social provider is not alloed to link other social provoders',
+        );
       }
       const kakaoUser = await axios.get('https://kapi.kakao.com/v2/user/me', {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -410,6 +453,11 @@ export class UserService {
       if (!localUser) {
         throw new NotFoundException('User not found');
       }
+      if (localUser.registeredBySocialType) {
+        throw new ForbiddenException(
+          'Account created by social provider is not alloed to link other social provoders',
+        );
+      }
       const userResponse = await axios.get(
         'https://openapi.naver.com/v1/nid/me',
         {
@@ -463,6 +511,11 @@ export class UserService {
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
       if (!user) {
         throw new NotFoundException('User not found');
+      }
+      if (user.registeredBySocialType) {
+        throw new ForbiddenException(
+          'Account created by social provider is not alloed to link other social provoders',
+        );
       }
 
       // Verify token with Google
@@ -525,6 +578,12 @@ export class UserService {
       if (!user) {
         throw new NotFoundException('User not found');
       }
+      if (user.registeredBySocialType) {
+        throw new ForbiddenException(
+          'Account created by social provider is not alloed to link other social provoders',
+        );
+      }
+
       // Decode token header to get key ID
       const decodedToken = jwt.decode(identityToken, { complete: true });
       if (!decodedToken) {
@@ -587,10 +646,17 @@ export class UserService {
     try {
       const existingAccount = await this.prisma.socialAccount.findFirst({
         where: { userId, provider },
+        include: { user: true },
       });
       if (!existingAccount) {
         throw new NotFoundException(
           `No linked ${provider} account found for this user`,
+        );
+      }
+
+      if (existingAccount.user.registeredBySocialType === provider) {
+        throw new BadRequestException(
+          `Cannot disconnect the only linked social account used for registration`,
         );
       }
 
@@ -607,6 +673,7 @@ export class UserService {
     }
   }
 
+  // Admin Functions
   async getUsersList(
     dto: GetUsersListDto,
     userId: string,
@@ -619,15 +686,18 @@ export class UserService {
       const where: any = {
         status: 'ACTIVE',
         id: { not: userId },
+        username: { not: null },
       };
 
       const myDataCondition: any = {
         status: 'ACTIVE',
         id: userId,
+        username: { not: null },
       };
 
       const countCondition: any = {
         status: 'ACTIVE',
+        username: { not: null },
       };
 
       // Apply search logic once
@@ -653,6 +723,7 @@ export class UserService {
               username: true,
               phoneNumber: true,
               createdAt: true,
+              registeredAt: true,
               tanks: true,
             },
           })
@@ -668,6 +739,7 @@ export class UserService {
           username: true,
           phoneNumber: true,
           createdAt: true,
+          registeredAt: true,
           tanks: true,
         },
         take,
@@ -690,7 +762,7 @@ export class UserService {
           id: u.id,
           username: u.username,
           phoneNumber: u.phoneNumber,
-          createdAt: u.createdAt,
+          createdAt: u.registeredAt,
           hasTank: u.tanks.length > 0,
         })),
         total: totalCount,

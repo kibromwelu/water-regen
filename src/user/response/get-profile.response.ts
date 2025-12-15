@@ -21,12 +21,18 @@ export class GetProfileResponse {
     @ApiProperty({type:String})
     username: string | null;
 
-    @ApiProperty()
-    phoneNumber: string;
+    @ApiProperty({type:String})
+    phoneNumber: string | null;
     
     @ApiProperty()
     linkedSocialAccount: SocialAccount;
 
     @ApiProperty()
     isAdmin: boolean;
+
+    @ApiProperty()
+    isRegisteredBySocial: boolean;
+
+    @ApiProperty()
+    isPasswordSet: boolean;
 }

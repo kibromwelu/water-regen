@@ -4,3 +4,4 @@ export * from './verify-verification-code.dto';
 export * from './logout.dto';
 export * from './get-users-list.dto';
 export * from './update-user-role.dto';
+export * from './set-username.dto';

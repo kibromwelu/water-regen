@@ -15,16 +15,20 @@ datasource db {
 }
 
 model User {
-  id           String     @id @default(uuid())
-  phoneNumber  String     @unique
-  username     String?    @unique
-  password     String?
+  id                     String                 @id @default(uuid())
+  phoneNumber            String?                @unique
+  username               String?                @unique
+  password               String?
   //aggrement    String[]
-  status       UserStatus @default(PENDING)
-  role         UserRole   @default(USER)
-  registeredAt DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime?  @updatedAt
+  status                 UserStatus             @default(PENDING)
+  role                   UserRole               @default(USER)
+  registeredBySocialType SocialAccountProvider?
+  socialProviderId       String?
+  socialEmail            String?
+  socialPhoneNumber      String?
+  registeredAt           DateTime?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime?              @updatedAt
 
   socialAccount         SocialAccount[]
   refreshToken          RefreshToken?

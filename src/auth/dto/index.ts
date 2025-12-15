@@ -6,3 +6,5 @@ export * from './login.dto';
 export * from './check-username.dto';
 export * from './find-account.dto';
 export * from './reset-password.dto';
+export * from './login-with-apple.dto';
+export * from './login-with-social.dto';

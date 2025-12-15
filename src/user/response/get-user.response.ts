@@ -15,11 +15,11 @@ class GetUserResponse {
     @ApiProperty({type:String})
     username: string | null;
 
-    @ApiProperty()
-    phoneNumber: string;
+    @ApiProperty({type:String})
+    phoneNumber: string | null;
     
-    @ApiProperty()
-    createdAt: Date;
+    @ApiProperty({type:Date})
+    createdAt: Date|null;
 
     @ApiProperty()
     hasTank: boolean;

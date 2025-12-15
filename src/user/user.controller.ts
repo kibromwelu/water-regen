@@ -12,8 +12,20 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
-import { DisconnectSocialAccountResponse, GetProfileResponse, GetUserslistResponse, GetUserRoleResponse, VerifyPasswordChangeResponse, GetUserDropdownResponse } from './response';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+} from '@nestjs/swagger';
+import {
+  DisconnectSocialAccountResponse,
+  GetProfileResponse,
+  GetUserslistResponse,
+  GetUserRoleResponse,
+  VerifyPasswordChangeResponse,
+  GetUserDropdownResponse,
+} from './response';
 import { CurrentUserId, Roles } from 'src/common/decorators';
 import { JwtGuard, RoleGuard } from 'src/common/guards';
 import {
@@ -21,6 +33,7 @@ import {
   GetUsersListDto,
   LogoutDto,
   SendVerficationCodeDto,
+  SetUsernameDto,
   UpdateUserRoleDto,
   VerifyVerifcationCodeDto,
 } from './dto';
@@ -32,7 +45,7 @@ import { InfiniteScroll } from 'src/common/dto';
 @UseGuards(JwtGuard, RoleGuard)
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @Get('my-profile')
   @ApiOperation({ summary: 'Get user profile' })
@@ -110,9 +123,22 @@ export class UserController {
   })
   async logout(
     @CurrentUserId() userId: string,
-    @Body() dto: LogoutDto
+    @Body() dto: LogoutDto,
   ): Promise<MessageResponse> {
     return this.userService.logout(userId, dto);
+  }
+
+  @Post('set-username')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Set new username if username was not set on account creation',
+  })
+  @ApiResponse({ status: 200, type: MessageResponse })
+  async setUsername(
+    @CurrentUserId() userId: string,
+    @Body() dto: SetUsernameDto,
+  ): Promise<MessageResponse> {
+    return this.userService.setUsername(userId, dto);
   }
 
   @Post('/link-kakao')
@@ -189,8 +215,14 @@ export class UserController {
   @ApiOperation({ summary: 'Connect Apple account' })
   @ApiResponse({ status: HttpStatus.OK, type: MessageResponse })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Bad request' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized access' })
-  @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'Internal server error' })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized access',
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
   async connectApple(
     @Query('identityToken') identityToken: string,
     @CurrentUserId() userId: string,
@@ -199,12 +231,28 @@ export class UserController {
   }
 
   @Post('disconnect-account')
-  @ApiOperation({ summary: 'Disconnect linked social account', description: 'Disconnect a linked social account from the user profile' })
-  @ApiQuery({ name: 'provider', enum: SocialAccountProvider, description: 'The social account provider to disconnect' })
+  @ApiOperation({
+    summary: 'Disconnect linked social account',
+    description: 'Disconnect a linked social account from the user profile',
+  })
+  @ApiQuery({
+    name: 'provider',
+    enum: SocialAccountProvider,
+    description: 'The social account provider to disconnect',
+  })
   @ApiResponse({ status: HttpStatus.OK, type: DisconnectSocialAccountResponse })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Linked account not found' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized access' })
-  @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'Internal server error' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Linked account not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized access',
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal server error',
+  })
   async disconnectSocialAccount(
     @Query('provider') provider: SocialAccountProvider,
     @CurrentUserId() userId: string,
@@ -214,35 +262,44 @@ export class UserController {
 
   @Get('admin/list')
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get users list', })
+  @ApiOperation({ summary: 'Get users list' })
   @ApiResponse({ status: HttpStatus.OK, type: GetUserslistResponse })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized access' })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized access',
+  })
   async getUsersList(
     @Query() dto: GetUsersListDto,
     @Query() pagination: InfiniteScroll,
     @CurrentUserId() userId: string,
   ): Promise<GetUserslistResponse> {
-    return this.userService.getUsersList(dto, userId ,pagination);
+    return this.userService.getUsersList(dto, userId, pagination);
   }
 
   @Patch('admin/update-role/:id')
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Update user role', })
+  @ApiOperation({ summary: 'Update user role' })
   @ApiResponse({ status: HttpStatus.OK, type: GetUserRoleResponse })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User not found' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized access' })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized access',
+  })
   async updateUserRole(
     @Param('id') id: string,
-    @Body() dto: UpdateUserRoleDto
+    @Body() dto: UpdateUserRoleDto,
   ): Promise<GetUserRoleResponse> {
     return this.userService.updateUserRole(id, dto.role);
   }
 
   @Get('condition/list')
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get users list for condition copy dropdown', })
+  @ApiOperation({ summary: 'Get users list for condition copy dropdown' })
   @ApiResponse({ status: HttpStatus.OK, type: [GetUserDropdownResponse] })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized access' })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized access',
+  })
   async getUsersListD(
     @Query() dto: GetUsersListDto,
   ): Promise<GetUserDropdownResponse[]> {

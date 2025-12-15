@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays, startOfDay, endOfDay, subMinutes } from 'date-fns';
 import {
@@ -18,7 +18,7 @@ export class CronService {
   constructor(
     private prisma: PrismaService,
     private fcmService: FcmService,
-  ) { }
+  ) {}
 
   @Cron(CronExpression.EVERY_HOUR)
   async checkFeedingAlerts() {
@@ -61,7 +61,7 @@ export class CronService {
           where: {
             husbandryData: {
               tankId: feed.tankId,
-              date: { gte: yesterdayStart, lte: yesterdayEnd }
+              date: { gte: yesterdayStart, lte: yesterdayEnd },
             },
             //createdAt: { gte: yesterdayStart, lte: yesterdayEnd },
           },
@@ -273,5 +273,27 @@ export class CronService {
         }
       }
     }
+  }
+
+  // Run every day at midnight
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async deletePendingAccount() {
+    try {
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
+      const deletedUser = await this.prisma.user.deleteMany({
+        where: {
+          status: 'PENDING',
+          createdAt: {
+            lt: oneDayAgo, // created more than 1 day ago
+          },
+        },
+      });
+      console.log(`cron: ${deletedUser.count} account deleted`);
+      
+    } catch (error) {
+      throw new Error('Error when deleting pending account', error.message);
+    }1
   }
 }

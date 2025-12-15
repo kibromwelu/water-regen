@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -10,6 +11,8 @@ import {
   CheckUsernameDto,
   FindAccountDto,
   LoginDto,
+  loginWithAppleDto,
+  loginWithSocialDto,
   RefreshTokenDto,
   ResetPasswordDto,
   SignupDto,
@@ -21,6 +24,7 @@ import { MessageResponse } from 'src/common/response';
 import {
   CheckUsernameResponse,
   LoginResponse,
+  SocialLoginResponse,
   VerifyCodeResponse,
   VerifyFindAccountResponse,
 } from './response';
@@ -51,9 +55,9 @@ export class AuthService {
   ): Promise<MessageResponse> {
     try {
       let code = '123456'; // temporary for testing;
-      if (dto.phoneNumber != '01012345678') { // '01012345678' is a test number so it will have a fixed code
-        code = Math.floor(100000 + Math.random() * 900000).toString();
-      }
+      // if (dto.phoneNumber != '01012345678') { // '01012345678' is a test number so it will have a fixed code
+      //   code = Math.floor(100000 + Math.random() * 900000).toString();
+      // }
       //code = Math.floor(100000 + Math.random() * 900000).toString();
       // const code = '123456'; // temporary for testing
 
@@ -70,10 +74,10 @@ export class AuthService {
         },
       });
 
-      if (dto.phoneNumber != '01012345678') {  // '01012345678' is a test number so it will not send SMS
-        // Send SMS with the code
-        const sms = await this.smsService.sendOtpSms(dto.phoneNumber, code);
-      }
+      // if (dto.phoneNumber != '01012345678') {  // '01012345678' is a test number so it will not send SMS
+      //   // Send SMS with the code
+      //   const sms = await this.smsService.sendOtpSms(dto.phoneNumber, code);
+      // }
       return { message: 'Verification code sent' };
     } catch (error) {
       throw new HttpException(error.message, error.status || 500);
@@ -103,23 +107,58 @@ export class AuthService {
       //     throw new BadRequestException('Phone number already in use');
       // }
 
-      let user = await this.prisma.user.upsert({
-        where: { phoneNumber: body.phoneNumber },
-        create: {
-          phoneNumber: body.phoneNumber,
-        },
-        update: {},
-      });
-
       await this.prisma.verificationCode.delete({
         where: { phoneNumber: body.phoneNumber },
       });
+      if (body.id) {
+        // register with social account
+        let checkPhone = await this.prisma.user.findUnique({
+          where: { phoneNumber: body.phoneNumber },
+        });
+        if (checkPhone && checkPhone.status == 'ACTIVE') {
+          throw new HttpException('Phone number already in use', 409);
+        }
+        if (checkPhone && checkPhone.status == 'PENDING') {
+          await this.prisma.user.delete({
+            where: { id: checkPhone.id },
+          });
+        }
+        let existingUser = await this.prisma.user.findUnique({
+          where: { id: body.id },
+        });
+        if (!existingUser || !existingUser.socialProviderId) {
+          throw new NotFoundException('Account not found');
+        }
+        await this.prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            phoneNumber: body.phoneNumber,
+          },
+        });
+        return {
+          message: 'Phone number verified successfully',
+          id: existingUser.id,
+        };
+      } else {
+        // register with normal signup
+        let user = await this.prisma.user.upsert({
+          where: { phoneNumber: body.phoneNumber },
+          create: {
+            phoneNumber: body.phoneNumber,
+          },
+          update: {
+            registeredBySocialType: null,
+            socialProviderId: null,
+            socialEmail: null,
+            socialPhoneNumber: null,
+          },
+        });
 
-      if (user && user.status == 'ACTIVE') {
-        throw new HttpException('Phone number already in use', 409);
+        if (user && user.status == 'ACTIVE') {
+          throw new HttpException('Phone number already in use', 409);
+        }
+        return { message: 'Phone number verified successfully', id: user.id };
       }
-
-      return { message: 'Phone number verified successfully', id: user.id };
     } catch (error) {
       throw new HttpException(error.message, error.status || 500);
     }
@@ -154,14 +193,24 @@ export class AuthService {
       }
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(dto.password, salt);
-      await this.prisma.user.update({
+      const updateUser = await this.prisma.user.update({
         where: { id: dto.id },
         data: {
           username: dto.username,
           password: hashedPassword,
           status: 'ACTIVE',
+          registeredAt: new Date(),
         },
       });
+      if (updateUser.registeredBySocialType && updateUser.socialProviderId) {
+        await this.prisma.socialAccount.create({
+          data: {
+            userId: updateUser.id,
+            provider: updateUser.registeredBySocialType,
+            providerId: updateUser.socialProviderId,
+          },
+        });
+      }
       let tokens = await this.generateTokens(dto.id);
       return { id: dto.id, ...tokens };
     } catch (error) {
@@ -228,6 +277,10 @@ export class AuthService {
         id: user.id,
         username: user.username,
         token: user.status === 'ACTIVE' ? passwordChangeRequest?.id : null,
+        isRegisteredBySocial: user.registeredBySocialType ? true : false,
+        providerType: user.registeredBySocialType,
+        providerInfo:user.registeredBySocialType? user.socialEmail?? user.socialPhoneNumber?? null : null,
+        
       };
     } catch (error) {
       throw new HttpException(error.message, error.status || 500);
@@ -240,6 +293,17 @@ export class AuthService {
       let user = await this.prisma.user.findUnique({ where: { id } });
       if (!user) {
         throw new BadRequestException('User not found');
+      }
+      if(!user.username && !dto.username){
+        throw new BadRequestException('Username is required');
+      }
+      if(!user.username && !dto.username){ // if username is changing, first check the user is free to be used
+        let checkUsername = await this.prisma.user.findUnique({
+        where: { username: dto.username },
+      });
+      if (checkUsername) {
+        throw new HttpException('Username already in use', 409);
+      }
       }
       const existingRequest = await this.prisma.passwordChangeRequest.findFirst(
         {
@@ -267,6 +331,7 @@ export class AuthService {
         where: { id: id },
         data: {
           password: hashedPassword,
+          username:user.username? undefined: dto.username // if username is set before, can't be changed
         },
       });
 
@@ -292,6 +357,9 @@ export class AuthService {
       });
       if (!user) {
         throw new BadRequestException('User not found');
+      }
+      if (!user.password) {
+        throw new ForbiddenException('Password is not set for this account');
       }
       const isPasswordValid = await bcrypt.compare(
         password,
@@ -414,10 +482,10 @@ export class AuthService {
     }
   }
 
-  async loginWithKakao(kakaoToken: string): Promise<LoginResponse> {
+  async loginWithKakao(dto: loginWithSocialDto): Promise<SocialLoginResponse> {
     try {
       let token = { accessToken: '', refreshToken: '' };
-      const accessToken = kakaoToken?.replace('Bearer ', '');
+      const accessToken = dto.accessToken?.replace('Bearer ', '');
       if (!accessToken) {
         throw new BadRequestException('Please provide kakao access token');
       }
@@ -442,16 +510,32 @@ export class AuthService {
         },
       });
       if (!user) {
-        throw new NotFoundException("You haven't connected your account");
-      } else {
-        if (user.status == 'ACTIVE') {
-          token = await this.generateTokens(user.id);
-        }
+        // throw new NotFoundException("You haven't connected your account");
+        //create an account if not found
+        user = await this.prisma.user.create({
+          data: {
+            status: 'PENDING',
+            registeredBySocialType: 'KAKAO',
+            socialProviderId: id.toString(),
+            socialEmail: dto.email,
+            socialPhoneNumber: dto.phoneNumber,
+          },
+        });
 
         return {
           accessToken: token.accessToken,
           refreshToken: token.refreshToken,
           id: user.id,
+          isNewUser: true,
+        };
+      } else {
+        token = await this.generateTokens(user.id);
+
+        return {
+          accessToken: token.accessToken,
+          refreshToken: token.refreshToken,
+          id: user.id,
+          isNewUser: false,
         };
       }
     } catch (error) {
@@ -460,10 +544,10 @@ export class AuthService {
     }
   }
 
-  async loginWithNaver(naverToken: string): Promise<LoginResponse> {
+  async loginWithNaver(dto: loginWithSocialDto): Promise<SocialLoginResponse> {
     try {
       let token = { accessToken: '', refreshToken: '' };
-      const accessToken = naverToken?.replace('Bearer ', '');
+      const accessToken = dto.accessToken?.replace('Bearer ', '');
       // console.log(accessToken);
       if (!accessToken) {
         throw new BadRequestException('Access token required');
@@ -494,23 +578,41 @@ export class AuthService {
         },
       });
       if (!localUser) {
-        throw new NotFoundException("You haven't connected your account");
+        // throw new NotFoundException("You haven't connected your account");
+        //create an account if not found
+        localUser = await this.prisma.user.create({
+          data: {
+            status: 'PENDING',
+            registeredBySocialType: 'NAVER',
+            socialProviderId: id,
+            socialEmail: dto.email,
+            socialPhoneNumber: dto.phoneNumber,
+          },
+        });
+
+        return {
+          accessToken: token.accessToken,
+          refreshToken: token.refreshToken,
+          id: localUser.id,
+          isNewUser: true,
+        };
       }
       token = await this.generateTokens(localUser.id);
       return {
         accessToken: token.accessToken,
         refreshToken: token.refreshToken,
         id: localUser.id,
+        isNewUser: false,
       };
     } catch (error) {
       throw new HttpException(error.message, error.status || 500);
     }
   }
 
-  async loginWithGoogle(googleToken: string): Promise<LoginResponse> {
+  async loginWithGoogle(dto: loginWithSocialDto): Promise<SocialLoginResponse> {
     try {
       let token = { accessToken: '', refreshToken: '' };
-      const googleAccessToken = googleToken?.replace('Bearer ', '');
+      const googleAccessToken = dto.accessToken?.replace('Bearer ', '');
       if (!googleAccessToken) {
         throw new BadRequestException('Access token is required');
       }
@@ -539,13 +641,31 @@ export class AuthService {
       });
 
       if (!localUser) {
-        throw new NotFoundException("You haven't connected your account");
+        //throw new NotFoundException("You haven't connected your account");
+        //create an account if not found
+        localUser = await this.prisma.user.create({
+          data: {
+            status: 'PENDING',
+            registeredBySocialType: 'GOOGLE',
+            socialProviderId: providerId,
+            socialEmail: dto.email,
+            socialPhoneNumber: dto.phoneNumber,
+          },
+        });
+
+        return {
+          accessToken: token.accessToken,
+          refreshToken: token.refreshToken,
+          id: localUser.id,
+          isNewUser: true,
+        };
       }
       token = await this.generateTokens(localUser.id);
       return {
         accessToken: token.accessToken,
         refreshToken: token.refreshToken,
         id: localUser.id,
+        isNewUser: false,
       };
     } catch (error) {
       console.log('Google sso login:', error.message);
@@ -564,15 +684,15 @@ export class AuthService {
     }
   }
 
-  async loginWithApple(identityToken: string): Promise<LoginResponse> {
+  async loginWithApple(dto: loginWithAppleDto): Promise<SocialLoginResponse> {
     try {
       let token = { accessToken: '', refreshToken: '' };
-      if (!identityToken) {
+      if (!dto.identityToken) {
         throw new BadRequestException('Identity token is required');
       }
 
       // Decode token header to get key ID
-      const decodedToken = jwt.decode(identityToken, { complete: true });
+      const decodedToken = jwt.decode(dto.identityToken, { complete: true });
       if (!decodedToken) {
         throw new BadRequestException('Invalid identity token format');
       }
@@ -587,7 +707,7 @@ export class AuthService {
       const publicKey = await this.getAppleSigningKey(header.kid);
 
       // Verify the token signature and claims
-      const verifiedToken = jwt.verify(identityToken, publicKey, {
+      const verifiedToken = jwt.verify(dto.identityToken, publicKey, {
         algorithms: ['RS256'],
         issuer: 'https://appleid.apple.com',
         audience: process.env.APPLE_BUNDLE_ID, // Your app's bundle ID
@@ -603,13 +723,67 @@ export class AuthService {
         },
       });
       if (!localUser) {
-        throw new NotFoundException("You haven't connected your account");
+        // throw new NotFoundException("You haven't connected your account");
+
+        //create an account if not found
+        localUser = await this.prisma.user.create({
+          data: {
+            status: 'PENDING',
+            registeredBySocialType: 'APPLE',
+            socialProviderId: verifiedToken.sub,
+            socialEmail: dto.email,
+            socialPhoneNumber: dto.phoneNumber,
+          },
+        });
+
+        return {
+          accessToken: token.accessToken,
+          refreshToken: token.refreshToken,
+          id: localUser.id,
+          isNewUser: true,
+        };
       }
       token = await this.generateTokens(localUser.id);
       return {
         accessToken: token.accessToken,
         refreshToken: token.refreshToken,
         id: localUser.id,
+        isNewUser: false,
+      };
+    } catch (error) {
+      console.log(`Apple identity token verification failed: ${error.message}`);
+      throw new HttpException(error.message, error.status || 500);
+    }
+  }
+
+  async signupWithApple(id: string): Promise<SocialLoginResponse> {
+    try {
+      let token = { accessToken: '', refreshToken: '' };
+      let user = await this.prisma.user.findUnique({
+        where: { id, status: 'PENDING', registeredBySocialType: 'APPLE' },
+      });
+      if (!user || !user.socialProviderId) {
+        throw new NotFoundException('Account not found');
+      }
+      //create an account if not found
+      const newUser = await this.prisma.user.create({
+        data: {
+          status: 'ACTIVE',
+          registeredAt: new Date(),
+          socialAccount: {
+            create: {
+              provider: 'APPLE',
+              providerId: user.socialProviderId,
+            },
+          },
+        },
+      });
+      token = await this.generateTokens(newUser.id);
+      return {
+        accessToken: token.accessToken,
+        refreshToken: token.refreshToken,
+        id: newUser.id,
+        isNewUser: true,
       };
     } catch (error) {
       console.log(`Apple identity token verification failed: ${error.message}`);
