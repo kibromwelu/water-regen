@@ -766,7 +766,8 @@ export class AuthService {
         throw new NotFoundException('Account not found');
       }
       //create an account if not found
-      const newUser = await this.prisma.user.create({
+      const updateUser = await this.prisma.user.update({
+        where:{id:user.id},
         data: {
           status: 'ACTIVE',
           registeredAt: new Date(),
@@ -778,11 +779,11 @@ export class AuthService {
           },
         },
       });
-      token = await this.generateTokens(newUser.id);
+      token = await this.generateTokens(updateUser.id);
       return {
         accessToken: token.accessToken,
         refreshToken: token.refreshToken,
-        id: newUser.id,
+        id: updateUser.id,
         isNewUser: true,
       };
     } catch (error) {

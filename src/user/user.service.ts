@@ -653,6 +653,11 @@ export class UserService {
           `No linked ${provider} account found for this user`,
         );
       }
+      if (existingAccount.user.registeredBySocialType) {
+        throw new ForbiddenException(
+          'Account created by social provider is not alloed to unlink its social provoder',
+        );
+      }
 
       if (existingAccount.user.registeredBySocialType === provider) {
         throw new BadRequestException(

@@ -141,29 +141,29 @@ export class UserController {
     return this.userService.setUsername(userId, dto);
   }
 
-  @Post('/link-kakao')
-  @ApiOperation({
-    summary: 'Connect kakao account',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    type: MessageResponse,
-    description: 'Connected successfully',
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'unauthorized access',
-  })
-  @ApiResponse({
-    status: HttpStatus.INTERNAL_SERVER_ERROR,
-    description: 'Internal server error',
-  })
-  async connectKakao(
-    @Query('accessToken') token: string,
-    @CurrentUserId() userId: string,
-  ) {
-    return await this.userService.linkKakao(token, userId);
-  }
+  // @Post('/link-kakao')
+  // @ApiOperation({
+  //   summary: 'Connect kakao account',
+  // })
+  // @ApiResponse({
+  //   status: HttpStatus.OK,
+  //   type: MessageResponse,
+  //   description: 'Connected successfully',
+  // })
+  // @ApiResponse({
+  //   status: HttpStatus.UNAUTHORIZED,
+  //   description: 'unauthorized access',
+  // })
+  // @ApiResponse({
+  //   status: HttpStatus.INTERNAL_SERVER_ERROR,
+  //   description: 'Internal server error',
+  // })
+  // async connectKakao(
+  //   @Query('accessToken') token: string,
+  //   @CurrentUserId() userId: string,
+  // ) {
+  //   return await this.userService.linkKakao(token, userId);
+  // }
 
   @Post('link-naver')
   @ApiOperation({

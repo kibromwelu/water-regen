@@ -58,18 +58,18 @@ export class AuthController {
         return this.authService.refreshToken(dto);
     }
 
-    @ApiOperation({ summary: 'Login with Kakao' })
-    @ApiResponse({ status: 200, type: LoginResponse })
-    @HttpCode(HttpStatus.OK)
-    @Post('login/kakao')
-    async loginWithKakao(
-        @Body() dto: loginWithSocialDto,
-    ): Promise<SocialLoginResponse> {
-        return this.authService.loginWithKakao(dto);
-    }
+    // @ApiOperation({ summary: 'Login with Kakao' })
+    // @ApiResponse({ status: 200, type: SocialLoginResponse })
+    // @HttpCode(HttpStatus.OK)
+    // @Post('login/kakao')
+    // async loginWithKakao(
+    //     @Body() dto: loginWithSocialDto,
+    // ): Promise<SocialLoginResponse> {
+    //     return this.authService.loginWithKakao(dto);
+    // }
 
     @ApiOperation({ summary: 'Login with Naver' })
-    @ApiResponse({ status: 200, type: LoginResponse })
+    @ApiResponse({ status: 200, type: SocialLoginResponse })
     @HttpCode(HttpStatus.OK)
     @Post('login/naver')
     async loginWithNaver(
@@ -79,7 +79,7 @@ export class AuthController {
     }
 
     @ApiOperation({ summary: 'Login with Google' })
-    @ApiResponse({ status: 200, type: LoginResponse })
+    @ApiResponse({ status: 200, type: SocialLoginResponse })
     @HttpCode(HttpStatus.OK)
     @Post('login/google')
     async loginWithGoogle(
