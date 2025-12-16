@@ -58,8 +58,7 @@ export class AuthService {
       // if (dto.phoneNumber != '01012345678') { // '01012345678' is a test number so it will have a fixed code
       //   code = Math.floor(100000 + Math.random() * 900000).toString();
       // }
-      //code = Math.floor(100000 + Math.random() * 900000).toString();
-      // const code = '123456'; // temporary for testing
+      code = Math.floor(100000 + Math.random() * 900000).toString();
 
       let verificationRecord = await this.prisma.verificationCode.upsert({
         where: { phoneNumber: dto.phoneNumber },
@@ -75,8 +74,8 @@ export class AuthService {
       });
 
       // if (dto.phoneNumber != '01012345678') {  // '01012345678' is a test number so it will not send SMS
-      //   // Send SMS with the code
-      //   const sms = await this.smsService.sendOtpSms(dto.phoneNumber, code);
+        // Send SMS with the code
+        const sms = await this.smsService.sendOtpSms(dto.phoneNumber, code);
       // }
       return { message: 'Verification code sent' };
     } catch (error) {
@@ -107,9 +106,6 @@ export class AuthService {
       //     throw new BadRequestException('Phone number already in use');
       // }
 
-      await this.prisma.verificationCode.delete({
-        where: { phoneNumber: body.phoneNumber },
-      });
       if (body.id) {
         // register with social account
         let checkPhone = await this.prisma.user.findUnique({
@@ -135,6 +131,9 @@ export class AuthService {
             phoneNumber: body.phoneNumber,
           },
         });
+        await this.prisma.verificationCode.delete({
+          where: { phoneNumber: body.phoneNumber },
+        });
         return {
           message: 'Phone number verified successfully',
           id: existingUser.id,
@@ -157,6 +156,9 @@ export class AuthService {
         if (user && user.status == 'ACTIVE') {
           throw new HttpException('Phone number already in use', 409);
         }
+        await this.prisma.verificationCode.delete({
+          where: { phoneNumber: body.phoneNumber },
+        });
         return { message: 'Phone number verified successfully', id: user.id };
       }
     } catch (error) {
@@ -279,8 +281,9 @@ export class AuthService {
         token: user.status === 'ACTIVE' ? passwordChangeRequest?.id : null,
         isRegisteredBySocial: user.registeredBySocialType ? true : false,
         providerType: user.registeredBySocialType,
-        providerInfo:user.registeredBySocialType? user.socialEmail?? user.socialPhoneNumber?? null : null,
-        
+        providerInfo: user.registeredBySocialType
+          ? (user.socialEmail ?? user.socialPhoneNumber ?? null)
+          : null,
       };
     } catch (error) {
       throw new HttpException(error.message, error.status || 500);
@@ -294,16 +297,17 @@ export class AuthService {
       if (!user) {
         throw new BadRequestException('User not found');
       }
-      if(!user.username && !dto.username){
+      if (!user.username && !dto.username) {
         throw new BadRequestException('Username is required');
       }
-      if(!user.username && !dto.username){ // if username is changing, first check the user is free to be used
+      if (!user.username && !dto.username) {
+        // if username is changing, first check the user is free to be used
         let checkUsername = await this.prisma.user.findUnique({
-        where: { username: dto.username },
-      });
-      if (checkUsername) {
-        throw new HttpException('Username already in use', 409);
-      }
+          where: { username: dto.username },
+        });
+        if (checkUsername) {
+          throw new HttpException('Username already in use', 409);
+        }
       }
       const existingRequest = await this.prisma.passwordChangeRequest.findFirst(
         {
@@ -331,7 +335,7 @@ export class AuthService {
         where: { id: id },
         data: {
           password: hashedPassword,
-          username:user.username? undefined: dto.username // if username is set before, can't be changed
+          username: user.username ? undefined : dto.username, // if username is set before, can't be changed
         },
       });
 
@@ -767,7 +771,7 @@ export class AuthService {
       }
       //create an account if not found
       const updateUser = await this.prisma.user.update({
-        where:{id:user.id},
+        where: { id: user.id },
         data: {
           status: 'ACTIVE',
           registeredAt: new Date(),

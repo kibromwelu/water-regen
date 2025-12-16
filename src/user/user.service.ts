@@ -120,8 +120,7 @@ export class UserService {
       //   // '01012345678' is a test number so it will have a fixed code
       //   code = Math.floor(100000 + Math.random() * 900000).toString();
       // }
-      // const code = Math.floor(100000 + Math.random() * 900000).toString();
-      // const code = '123456'; // temporary for testing
+      code = Math.floor(100000 + Math.random() * 900000).toString();
 
       // save verification code
       const verification = await this.prisma.verificationCode.upsert({
@@ -139,8 +138,8 @@ export class UserService {
 
       // if (phoneNumber != '01012345678') {
       //   // '01012345678' is a test number so it will not send SMS
-      //   // Send SMS with the code
-      //   const sms = await this.smsService.sendOtpSms(phoneNumber, code);
+        // Send SMS with the code
+        const sms = await this.smsService.sendOtpSms(phoneNumber, code);
       // }
 
       return {
@@ -540,7 +539,7 @@ export class UserService {
           );
         }
         throw new BadRequestException(
-          'Google account is linked to another user',
+          "Account is already linked with someone's account",
         );
       }
 
@@ -659,11 +658,11 @@ export class UserService {
         );
       }
 
-      if (existingAccount.user.registeredBySocialType === provider) {
-        throw new BadRequestException(
-          `Cannot disconnect the only linked social account used for registration`,
-        );
-      }
+      // if (existingAccount.user.registeredBySocialType === provider) {
+      //   throw new BadRequestException(
+      //     `Cannot disconnect the only linked social account used for registration`,
+      //   );
+      // }
 
       await this.prisma.socialAccount.delete({
         where: { id: existingAccount.id },
@@ -697,7 +696,7 @@ export class UserService {
       const myDataCondition: any = {
         status: 'ACTIVE',
         id: userId,
-        username: { not: null },
+        // username: { not: null },
       };
 
       const countCondition: any = {
@@ -790,7 +789,11 @@ export class UserService {
       });
 
       if (!existingUser) {
-        throw new Error('User not found');
+        throw new NotFoundException('User not found');
+      }
+
+      if (!existingUser.username) {
+        throw new BadRequestException('User must have username to purfome this action.');
       }
 
       const user = await this.prisma.user.update({
