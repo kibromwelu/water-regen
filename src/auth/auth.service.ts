@@ -114,7 +114,7 @@ export class AuthService {
         if (checkPhone && checkPhone.status == 'ACTIVE') {
           throw new HttpException('Phone number already in use', 409);
         }
-        if (checkPhone && checkPhone.status == 'PENDING') {
+        if (checkPhone && checkPhone.status == 'PENDING' && checkPhone.id!=body.id) {
           await this.prisma.user.delete({
             where: { id: checkPhone.id },
           });

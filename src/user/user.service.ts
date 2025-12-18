@@ -120,6 +120,7 @@ export class UserService {
       //   // '01012345678' is a test number so it will have a fixed code
       //   code = Math.floor(100000 + Math.random() * 900000).toString();
       // }
+            
       code = Math.floor(100000 + Math.random() * 900000).toString();
 
       // save verification code
