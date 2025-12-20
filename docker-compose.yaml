@@ -29,5 +29,6 @@ services:
     ports:
       - "3000:3000"
     env_file: .env
+    restart: unless-stopped
     command: ["/bin/sh", "-c", "npx prisma migrate deploy && npx prisma generate && npm run start:prod"]
   

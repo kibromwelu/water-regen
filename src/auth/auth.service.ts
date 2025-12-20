@@ -55,10 +55,10 @@ export class AuthService {
   ): Promise<MessageResponse> {
     try {
       let code = '123456'; // temporary for testing;
-      // if (dto.phoneNumber != '01012345678') { // '01012345678' is a test number so it will have a fixed code
-      //   code = Math.floor(100000 + Math.random() * 900000).toString();
-      // }
-      code = Math.floor(100000 + Math.random() * 900000).toString();
+      if (dto.phoneNumber != '01012345678') { // '01012345678' is a test number so it will have a fixed code
+        code = Math.floor(100000 + Math.random() * 900000).toString();
+      }
+      // code = Math.floor(100000 + Math.random() * 900000).toString();
 
       let verificationRecord = await this.prisma.verificationCode.upsert({
         where: { phoneNumber: dto.phoneNumber },
@@ -73,10 +73,10 @@ export class AuthService {
         },
       });
 
-      // if (dto.phoneNumber != '01012345678') {  // '01012345678' is a test number so it will not send SMS
+      if (dto.phoneNumber != '01012345678') {  // '01012345678' is a test number so it will not send SMS
         // Send SMS with the code
         const sms = await this.smsService.sendOtpSms(dto.phoneNumber, code);
-      // }
+      }
       return { message: 'Verification code sent' };
     } catch (error) {
       throw new HttpException(error.message, error.status || 500);

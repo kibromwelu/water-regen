@@ -116,12 +116,12 @@ export class UserService {
       }
 
       let code = '123456'; // temporary for testing;
-      // if (phoneNumber != '01012345678') {
-      //   // '01012345678' is a test number so it will have a fixed code
-      //   code = Math.floor(100000 + Math.random() * 900000).toString();
-      // }
+      if (phoneNumber != '01012345678') {
+        // '01012345678' is a test number so it will have a fixed code
+        code = Math.floor(100000 + Math.random() * 900000).toString();
+      }
             
-      code = Math.floor(100000 + Math.random() * 900000).toString();
+      // code = Math.floor(100000 + Math.random() * 900000).toString();
 
       // save verification code
       const verification = await this.prisma.verificationCode.upsert({
@@ -137,11 +137,11 @@ export class UserService {
         },
       });
 
-      // if (phoneNumber != '01012345678') {
-      //   // '01012345678' is a test number so it will not send SMS
+      if (phoneNumber != '01012345678') {
+        // '01012345678' is a test number so it will not send SMS
         // Send SMS with the code
         const sms = await this.smsService.sendOtpSms(phoneNumber, code);
-      // }
+      }
 
       return {
         message: 'Verification code sent',
