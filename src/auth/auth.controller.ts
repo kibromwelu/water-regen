@@ -175,33 +175,33 @@ export class AuthController {
   }
 
   //testing apple login callback
-  @Post('apple/callback')
-  async appleCallback(@Req() req: Request, @Res() res: Response) {
-    try {
-      console.log('apple callback', req.body);
+  // @Post('apple/callback')
+  // async appleCallback(@Req() req: Request, @Res() res: Response) {
+  //   try {
+  //     console.log('apple callback', req.body);
 
-      const { code, state, error } = req.body as any;
+  //     const { code, state, error } = req.body as any;
 
-      if (error) {
-        throw new Error(error);
-      }
+  //     if (error) {
+  //       throw new Error(error);
+  //     }
 
-      if (!code) {
-        throw new Error('Authorization code not provided');
-      }
+  //     if (!code) {
+  //       throw new Error('Authorization code not provided');
+  //     }
 
-      //   const result = await this.authService.loginWithAppleWeb(code);
+  //     //   const result = await this.authService.loginWithAppleWeb(code);
 
-      // Redirect back to mobile app 
-      return res.redirect(
-        `myapp://login-success?accessToken=${'result.accessToken'}&refreshToken=${'result.refreshToken'}`,
-      );
-    } catch (err) {
-      return res.redirect(
-        `myapp://login-error?message=${encodeURIComponent(err.message)}`,
-      );
-    }
-  }
+  //     // Redirect back to mobile app 
+  //     return res.redirect(
+  //       `myapp://login-success?accessToken=${'result.accessToken'}&refreshToken=${'result.refreshToken'}`,
+  //     );
+  //   } catch (err) {
+  //     return res.redirect(
+  //       `myapp://login-error?message=${encodeURIComponent(err.message)}`,
+  //     );
+  //   }
+  // }
 
   // @Get('apple/callback') // ✅ Apple calls this endpoint with a GET request
   // async handleAppleCallback(
@@ -243,5 +243,35 @@ export class AuthController {
   //   // 5. Send the HTTP 302 Redirect
   //   res.redirect(HttpStatus.FOUND, intentUrl);
   // }
+
+  @Post('apple/callback')
+async appleCallback(@Req() req: Request, @Res() res: Response) {
+  const { code, id_token, state, user, error } = req.body as any;
+
+  if (error) {
+    return res.redirect(
+      `waterregenapp://login-error?message=${encodeURIComponent(error)}`,
+    );
+  }
+
+  // Build params dynamically
+  const params: Record<string, string> = {};
+
+  if (code) params.code = code;
+  if (id_token) params.id_token = id_token;
+  if (state) params.state = state;
+  if (user) params.user = user; // keep raw JSON string
+
+  const encodedParams = new URLSearchParams(params).toString();
+
+  // Android deep link (intent://)
+  // const intentUrl =
+  //   `intent://callback?${encodedParams}` +
+  //   `#Intent;scheme=waterregenapp;package=com.waterregen.app;end`;
+  const intentUrl = `intent://callback?${encodedParams}#Intent;package=com.waterregen.app;scheme=waterregenapp;end`;
+
+  return res.redirect(302, intentUrl);
+}
+
 
 }
