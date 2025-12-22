@@ -246,6 +246,7 @@ export class AuthController {
 
   @Post('apple/callback')
 async appleCallback(@Req() req: Request, @Res() res: Response) {
+  console.log('apple callback', req.body);
   const { code, id_token, state, user, error } = req.body as any;
 
   if (error) {
@@ -263,12 +264,14 @@ async appleCallback(@Req() req: Request, @Res() res: Response) {
   if (user) params.user = user; // keep raw JSON string
 
   const encodedParams = new URLSearchParams(params).toString();
+console.log("encodedParams",encodedParams);
 
   // Android deep link (intent://)
   // const intentUrl =
   //   `intent://callback?${encodedParams}` +
   //   `#Intent;scheme=waterregenapp;package=com.waterregen.app;end`;
   const intentUrl = `intent://callback?${encodedParams}#Intent;package=com.waterregen.app;scheme=waterregenapp;end`;
+console.log("intentUrl",intentUrl);
 
   return res.redirect(302, intentUrl);
 }
