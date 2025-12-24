@@ -145,7 +145,7 @@ export class CronService {
                 data: {
                   tankId: feed.tankId,
                   type: 'FEEDING_INCREASE',
-                  message: `${feed.tank.name}에 사료 ${feedPerTime.toFixed(2)}kg을 추가해주세요.`,
+                  message: `${feed.tank.name}에 사료 ${feedPerTime.toFixed(2)}g을 추가해주세요.`,
                 },
                 include: { tank: true },
               });
