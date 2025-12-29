@@ -140,26 +140,29 @@ export class AuthService {
         };
       } else {
         // register with normal signup
-        let user = await this.prisma.user.upsert({
-          where: { phoneNumber: body.phoneNumber },
-          create: {
-            phoneNumber: body.phoneNumber,
-          },
-          update: {
-            registeredBySocialType: null,
-            socialProviderId: null,
-            socialEmail: null,
-            socialPhoneNumber: null,
-          },
-        });
-
+        let user = await this.prisma.user.findUnique({where: { phoneNumber: body.phoneNumber }});
         if (user && user.status == 'ACTIVE') {
           throw new HttpException('Phone number already in use', 409);
+        }else {
+          user = await this.prisma.user.upsert({
+            where: { phoneNumber: body.phoneNumber },
+            create: {
+              phoneNumber: body.phoneNumber,
+            },
+            update: {
+              registeredBySocialType: null,
+              socialProviderId: null,
+              socialEmail: null,
+              socialPhoneNumber: null,
+            },
+          });
         }
+
+        
         await this.prisma.verificationCode.deleteMany({
           where: { phoneNumber: body.phoneNumber },
         });
-        return { message: 'Phone number verified successfully', id: user.id };
+        return { message: 'Phone number verified successfully', id: user?.id };
       }
     } catch (error) {
       throw new HttpException(error.message, error.status || 500);
