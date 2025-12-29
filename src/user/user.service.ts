@@ -180,6 +180,11 @@ export class UserService {
       if (existingUser && existingUser.id !== userId) {
         throw new HttpException('Phone number already in use', 409);
       }
+      else if(existingUser&&existingUser.status=='PENDING'){
+        await this.prisma.user.delete({where
+          :{id:existingUser.id}
+        });
+      }
 
       // update user phone number
       await this.prisma.user.update({
