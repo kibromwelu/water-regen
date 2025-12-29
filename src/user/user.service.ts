@@ -174,10 +174,12 @@ export class UserService {
         throw new BadRequestException('Verification code expired');
       }
 
-      const existingUser = await this.prisma.user.findUnique({
-        where: { phoneNumber, status: 'ACTIVE' },
+      const existingUser = await this.prisma.user.findFirst({
+        where: { phoneNumber, id: { not: userId } },
       });
-      if (existingUser && existingUser.id !== userId) {
+      
+      if (existingUser && existingUser.status== 'ACTIVE') {
+        
         throw new HttpException('Phone number already in use', 409);
       }
       else if(existingUser&&existingUser.status=='PENDING'){
