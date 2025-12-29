@@ -188,7 +188,7 @@ export class UserService {
       });
 
       // delete verification code
-      await this.prisma.verificationCode.delete({
+      await this.prisma.verificationCode.deleteMany({
         where: { phoneNumber },
       });
 
@@ -236,7 +236,7 @@ export class UserService {
       });
 
       // delete verification code
-      await this.prisma.verificationCode.delete({
+      await this.prisma.verificationCode.deleteMany({
         where: { phoneNumber },
       });
 

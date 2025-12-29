@@ -131,7 +131,7 @@ export class AuthService {
             phoneNumber: body.phoneNumber,
           },
         });
-        await this.prisma.verificationCode.delete({
+        await this.prisma.verificationCode.deleteMany({
           where: { phoneNumber: body.phoneNumber },
         });
         return {
@@ -156,7 +156,7 @@ export class AuthService {
         if (user && user.status == 'ACTIVE') {
           throw new HttpException('Phone number already in use', 409);
         }
-        await this.prisma.verificationCode.delete({
+        await this.prisma.verificationCode.deleteMany({
           where: { phoneNumber: body.phoneNumber },
         });
         return { message: 'Phone number verified successfully', id: user.id };
@@ -271,7 +271,7 @@ export class AuthService {
             userId: user.id,
           },
         });
-      await this.prisma.verificationCode.delete({
+      await this.prisma.verificationCode.deleteMany({
         where: { phoneNumber: body.phoneNumber },
       });
       return {
@@ -320,7 +320,7 @@ export class AuthService {
       const oneHour = 60 * 60 * 1000;
       if (existingRequest.createdAt.getTime() + oneHour < Date.now()) {
         // delete expired token
-        await this.prisma.passwordChangeRequest.delete({
+        await this.prisma.passwordChangeRequest.deleteMany({
           where: { id: existingRequest.id },
         });
         throw new BadRequestException('Invalid or expired token');
@@ -340,7 +340,7 @@ export class AuthService {
       });
 
       // delete the token so it can't be used again
-      await this.prisma.passwordChangeRequest.delete({
+      await this.prisma.passwordChangeRequest.deleteMany({
         where: { id: existingRequest.id },
       });
       let tokens = await this.generateTokens(user.id);
