@@ -1,4 +1,299 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { subDays, startOfDay, endOfDay, subMinutes } from 'date-fns';
+import {
+  getKoreaDate,
+  getKoreaHour,
+  koreaToUtc,
+  utcToKorea,
+} from 'src/common/utils';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { addDays, addWeeks, addMonths, addYears, isAfter } from 'date-fns';
+import { FcmService } from 'src/fcm/fcm.service';
 
 @Injectable()
-export class CronService {}
+export class CronService {
+  // private readonly logger = new Logger(CronService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private fcmService: FcmService,
+  ) {}
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async checkFeedingAlerts() {
+    const currentHour = new Date();
+    let currentKoreaTime = utcToKorea(currentHour.toISOString());
+    let currentKoreaHour = getKoreaHour(currentKoreaTime);
+    console.log('Current Korea Hour:', currentKoreaHour);
+    const feedConditions = await this.prisma.feedIncreaseCondition.findMany({
+      include: { tank: true },
+    });
+    console.log('Feeding conditions: ', feedConditions.length);
+
+    for (const feed of feedConditions) {
+      const refHour = parseInt(feed.referenceTime);
+      const interval = 6;
+      console.log('Feed referece time: ', refHour);
+      const feedingHours = [
+        refHour,
+        (refHour + interval) % 24,
+        (refHour + 2 * interval) % 24,
+        (refHour + 3 * interval) % 24,
+      ];
+      console.log('Feeding hours:', feedingHours);
+      let updatedFeed;
+      if (currentKoreaHour === refHour) {
+        let now = new Date();
+        let koreanTime = utcToKorea(now.toISOString());
+        console.log('Korean Time at refHour:', koreanTime);
+        let yesterdayEnd = koreaToUtc(
+          getKoreaDate(koreanTime),
+          feed.referenceTime,
+        );
+        console.log('UTC Time at refHour:', yesterdayEnd);
+        let yesterdayStart = subDays(yesterdayEnd, 1);
+        console.log('Yesterday UTC Time at refHour:', yesterdayStart);
+
+        // Sum up all feed records for yesterday for this tank
+        let actualUsedYesterday = 0;
+        const feedRecords = await this.prisma.feedingData.findMany({
+          where: {
+            husbandryData: {
+              tankId: feed.tankId,
+              date: { gte: yesterdayStart, lte: yesterdayEnd },
+            },
+            //createdAt: { gte: yesterdayStart, lte: yesterdayEnd },
+          },
+        });
+
+        actualUsedYesterday = feedRecords.reduce(
+          (sum, record) => sum + record.amount,
+          0,
+        );
+
+        let newFeedAmount = feed.expectedFeedAmount || 0;
+
+        // --- 10% increase logic ---
+        if (actualUsedYesterday > feed.expectedFeedAmount) {
+          newFeedAmount = actualUsedYesterday * 1.1;
+        } else {
+          newFeedAmount = feed.expectedFeedAmount * 1.1;
+        }
+
+        // Prevent duplicate alerts within the same hour
+        let lastMessageSentInKoreaHour;
+        if (feed.lastMessageSent) {
+          lastMessageSentInKoreaHour = utcToKorea(
+            feed.lastMessageSent?.toISOString(),
+          );
+        }
+        console.log('Last message sent hour:', lastMessageSentInKoreaHour);
+        let lastMessageSentHour;
+        if (lastMessageSentInKoreaHour) {
+          lastMessageSentHour = getKoreaHour(lastMessageSentInKoreaHour);
+        }
+        if (!feed.lastMessageSent || lastMessageSentHour !== currentKoreaHour) {
+          updatedFeed = await this.prisma.feedIncreaseCondition.update({
+            where: { id: feed.id },
+            data: {
+              expectedFeedAmount: newFeedAmount,
+              dailyMessageSentCount: 0,
+              lastMessageSent: new Date(),
+            },
+          });
+        }
+        //continue; // move to next tank
+      }
+
+      // --- 2️⃣ Handle feeding alert times ---
+      if (feedingHours.includes(currentKoreaHour)) {
+        // Prevent duplicate alerts within the same hour
+        let lastMessageSentInKoreaHour;
+        if (feed.lastMessageSent) {
+          lastMessageSentInKoreaHour = utcToKorea(
+            feed.lastMessageSent?.toISOString(),
+          );
+        }
+        console.log('Last message sent hour:', lastMessageSentInKoreaHour);
+        let lastMessageSentHour;
+        if (lastMessageSentInKoreaHour) {
+          lastMessageSentHour = getKoreaHour(lastMessageSentInKoreaHour);
+        }
+        if (!feed.lastMessageSent || lastMessageSentHour !== currentKoreaHour) {
+          const feedPerTime = updatedFeed
+            ? updatedFeed.expectedFeedAmount / 4
+            : feed.expectedFeedAmount / 4;
+
+          if (feedPerTime <= 0) {
+            console.log('Feed per time is zero or negative, skipping alert.');
+            continue;
+          }
+          const { newTodo, feedIncreaseCondition } =
+            await this.prisma.$transaction(async (tx) => {
+              const feedIncreaseCondition =
+                await this.prisma.feedIncreaseCondition.update({
+                  where: { id: feed.id },
+                  data: {
+                    // dailyMessageSentCount: { increment: 1 },
+                    // totalMessageSent: { increment: 1 },
+                    lastMessageSent: new Date(),
+                  },
+                });
+
+              const newTodo = await tx.todo.create({
+                data: {
+                  tankId: feed.tankId,
+                  type: 'FEEDING_INCREASE',
+                  message: `${feed.tank.name}에 사료 ${feedPerTime.toFixed(2)}g을 추가해주세요.`,
+                },
+                include: { tank: true },
+              });
+              return { feedIncreaseCondition, newTodo };
+            });
+
+          // Send FCM notification
+          if (newTodo) {
+            await this.fcmService.sendTodoNotification({
+              userId: newTodo.tank.userId,
+              tankId: newTodo.tankId,
+              tankName: newTodo.tank.name,
+              todoId: newTodo.id,
+              message: newTodo.message,
+              createdAt: newTodo.createdAt,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // Run every 5 minutes
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async handleRecurringConditions() {
+    const now = new Date();
+
+    // Fetch all active recurring conditions
+    const recurringConditions = await this.prisma.recurringCondition.findMany({
+      // where: {
+      //   OR: [
+      //     { endDate: null },
+      //     { endDate: { gte: now } },
+      //   ],
+      // },
+      include: {
+        tank: true,
+      },
+    });
+
+    for (const condition of recurringConditions) {
+      const {
+        id,
+        tankId,
+        name,
+        intervalType,
+        intervalValue,
+        endDate,
+        endingCount,
+        lastMessageSent,
+        totalMessageSent,
+        message,
+      } = condition;
+
+      const lastRun = subMinutes(now, 5);
+      //Check stop conditions
+      if (endDate && isAfter(lastRun, endDate)) {
+        console.log(`Condition ${id} expired due to endDate.`);
+        continue;
+      }
+
+      if (endingCount && totalMessageSent >= endingCount) {
+        console.log(`Condition ${id} reached ending count.`);
+        continue;
+      }
+
+      // Calculate next trigger time
+      let nextTrigger = new Date(lastMessageSent);
+      switch (intervalType) {
+        case 'DAYS':
+          nextTrigger = addDays(lastMessageSent, intervalValue);
+          break;
+        case 'WEEKS':
+          nextTrigger = addWeeks(lastMessageSent, intervalValue);
+          break;
+        case 'MONTHS':
+          nextTrigger = addMonths(lastMessageSent, intervalValue);
+          break;
+        case 'YEARS':
+          nextTrigger = addYears(lastMessageSent, intervalValue);
+          break;
+      }
+
+      // Check if it's time to trigger
+      if (isAfter(now, nextTrigger)) {
+        const { todo, updatedRecurringCondition } =
+          await this.prisma.$transaction(async (tx) => {
+            // Create todo
+            const todo = await tx.todo.create({
+              data: {
+                tankId,
+                message,
+                type: 'RECURRING',
+              },
+              include: { tank: true },
+            });
+
+            // Update recurring condition
+            const updatedRecurringCondition =
+              await tx.recurringCondition.update({
+                where: { id },
+                data: {
+                  lastMessageSent: now,
+                  totalMessageSent: { increment: 1 },
+                },
+              });
+
+            return { todo, updatedRecurringCondition };
+          });
+
+        console.log(
+          `Triggered recurring condition: ${name} for tank ${tankId}`,
+        );
+
+        // Send FCM notification
+        if (todo) {
+          await this.fcmService.sendTodoNotification({
+            userId: todo.tank.userId,
+            tankId: todo.tankId,
+            tankName: todo.tank.name,
+            todoId: todo.id,
+            message: todo.message,
+            createdAt: todo.createdAt,
+          });
+        }
+      }
+    }
+  }
+
+  // Run every day at midnight
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async deletePendingAccount() {
+    try {
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
+      const deletedUser = await this.prisma.user.deleteMany({
+        where: {
+          status: 'PENDING',
+          createdAt: {
+            lt: oneDayAgo, // created more than 1 day ago
+          },
+        },
+      });
+      console.log(`cron: ${deletedUser.count} account deleted`);
+      
+    } catch (error) {
+      throw new Error('Error when deleting pending account', error.message);
+    }1
+  }
+}

@@ -7,6 +7,16 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { CronModule } from './cron/cron.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { SmsModule } from './sms/sms.module';
+import { TankModule } from './tank/tank.module';
+import { ConditionModule } from './condition/condition.module';
+import { FeedIncreaseConditionModule } from './feed-increase-condition/feed-increase-condition.module';
+import { RecurringConditionModule } from './recurring-condition/recurring-condition.module';
+import { RecordModule } from './record/record.module';
+import { HomeModule } from './home/home.module';
+import { FcmModule } from './fcm/fcm.module';
+import { WebsocketModule } from './websocket/websocket.module';
+import { TermsOfUseModule } from './terms-of-use/terms-of-use.module';
 
 @Module({
   imports: [
@@ -16,8 +26,18 @@ import { ScheduleModule } from '@nestjs/schedule';
     UserModule,
     ScheduleModule.forRoot(),
     CronModule,
+    SmsModule,
+    TankModule,
+    ConditionModule,
+    FeedIncreaseConditionModule,
+    RecurringConditionModule,
+    RecordModule,
+    HomeModule,
+    FcmModule,
+    WebsocketModule,
+    TermsOfUseModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

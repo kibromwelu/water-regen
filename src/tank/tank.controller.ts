@@ -1,0 +1,86 @@
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { JwtGuard, RoleGuard } from 'src/common/guards';
+import { TankService } from './tank.service';
+import { CurrentUserId, Roles } from 'src/common/decorators';
+import { GetAdminTanksDropdownResponse, GetAdminTanksListResponse, GetTankDetailResponse, GetTanksListResponse } from './response';
+import { CreateTankDto, UpdateTankDto } from './dto';
+import { MessageResponse } from 'src/common/response';
+
+
+@ApiBearerAuth()
+@UseGuards(JwtGuard, RoleGuard)
+@Controller('tank')
+export class TankController {
+    constructor(private readonly tankService: TankService) {}
+
+    @Get('list')
+    @ApiOperation({ summary: 'Get list of tanks' })
+    @ApiResponse({ status: 200, type: [GetTanksListResponse] })
+    async getAllTanks(
+    @CurrentUserId() userId: string,
+    ): Promise<GetTanksListResponse[]> {
+    return this.tankService.getAllTanks(userId);
+    }
+
+    // @Get('detail/:id')
+    // @ApiOperation({ summary: 'Get tank detail info' })
+    // @ApiResponse({ status: 200, type: GetTankDetailResponse })
+    // async getTankDetail(
+    // @CurrentUserId() userId: string,
+    // @Param('id') id: string,
+    // ): Promise<GetTankDetailResponse> {
+    // return this.tankService.getTankDetail(userId, id);
+    // }
+
+    @Post('create')
+    @ApiOperation({ summary: 'create tank info' })
+    @ApiResponse({ status: 201, type: GetTanksListResponse })
+    async createTank(
+    @CurrentUserId() userId: string,
+    @Body() dto: CreateTankDto,
+    ): Promise<GetTanksListResponse> {
+    return this.tankService.createTank(userId, dto);
+    }
+
+    @Patch('update/:id')
+    @ApiOperation({ summary: 'update tank info' })
+    @ApiResponse({ status: 200, type: GetTanksListResponse })
+    async updateTank(
+    @CurrentUserId() userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateTankDto,
+    ): Promise<GetTanksListResponse> {
+    return this.tankService.updateTank(userId, id ,dto);
+    }
+
+    @Delete('delete/:id')
+    @ApiOperation({ summary: 'delete tank' })
+    @ApiResponse({ status: 200, type: MessageResponse })
+    async deleteTank(
+    @CurrentUserId() userId: string,
+    @Param('id') id: string,
+    ): Promise<MessageResponse> {
+    return this.tankService.deleteTank(userId, id );
+    }
+
+    @Get('admin/list/:id')
+    @Roles('ADMIN')
+    @ApiOperation({ summary: "Get list of user's tanks by admin" })
+    @ApiResponse({ status: 200, type: [GetAdminTanksListResponse] })
+    async getUserTanks(
+    @Param('id') id: string,
+    ): Promise<GetAdminTanksListResponse[]> {
+    return this.tankService.getUserTanks(id);
+    }
+
+    @Get('condition/list/:id')
+    @Roles('ADMIN')
+    @ApiOperation({ summary: "Get list of user's tanks for condition dropdown" })
+    @ApiResponse({ status: 200, type: [GetAdminTanksDropdownResponse] })
+    async getUserTanksDropdown(
+    @Param('id') id: string,
+    ): Promise<GetAdminTanksDropdownResponse[]> {
+    return this.tankService.getUserTanksDropdown(id);
+    }
+}

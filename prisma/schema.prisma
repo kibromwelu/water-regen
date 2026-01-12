@@ -15,18 +15,26 @@ datasource db {
 }
 
 model User {
-  id           String     @id @default(uuid())
-  phoneNumber  String     @unique
-  userName     String?    @unique
-  password     String?
+  id                     String                 @id @default(uuid())
+  phoneNumber            String?                @unique
+  username               String?                @unique
+  password               String?
   //aggrement    String[]
-  status       UserStatus @default(PENDING)
-  registeredAt DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime?  @updatedAt
+  status                 UserStatus             @default(PENDING)
+  role                   UserRole               @default(USER)
+  registeredBySocialType SocialAccountProvider?
+  socialProviderId       String?
+  socialEmail            String?
+  socialPhoneNumber      String?
+  registeredAt           DateTime?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime?              @updatedAt
 
-  socialAccount SocialAccount[]
-  refreshToken  refreshToken?
+  socialAccount         SocialAccount[]
+  refreshToken          RefreshToken?
+  passwordChangeRequest PasswordChangeRequest[]
+  tanks                 Tank[]
+  scmTokens             FcmToken[]
 }
 
 model SocialAccount {
@@ -42,24 +50,183 @@ model SocialAccount {
   @@unique([provider, providerId])
 }
 
-model refreshToken {
+model RefreshToken {
   id        String    @id @default(uuid())
   token     String
   expiresAt DateTime
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
 
-  userId String? @unique
-  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordChangeRequest {
+  id        String    @id @default(uuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationCode {
   id          String    @id @default(uuid())
   phoneNumber String    @unique
   code        String
-  expiresAt   DateTime?
+  expiresAt   DateTime
   createdAt   DateTime  @default(now())
   updatedAt   DateTime? @updatedAt
+}
+
+model Tank {
+  id                   String    @id @default(uuid())
+  tankerId             Int       @unique @default(autoincrement())
+  name                 String
+  whitelegShrimpStrain String
+  averageBodyWeight    Float
+  salinity             Float?
+  numberStocked        Int
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime? @updatedAt
+
+  userId                 String
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  husbandryData          HusbandryData[]
+  conditions             Condition[]
+  recurringConditions    RecurringCondition[]
+  feedIncreaseConditions FeedIncreaseCondition[]
+  todos                  Todo[]
+  records                Record[]
+}
+
+model HusbandryData {
+  id               String    @id @default(uuid())
+  date             DateTime
+  isClean          Boolean?
+  waterTemperature Float?
+  do               Float?
+  ph               Float?
+  nh4              Float?
+  no2              Float?
+  alk              Float?
+  salinity         Float?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime? @updatedAt
+
+  tankId           String
+  tank             Tank               @relation(fields: [tankId], references: [id], onDelete: Cascade)
+  feedingData      FeedingData[]
+  supplementDosing SupplementDosing[]
+
+  @@unique([tankId, date])
+}
+
+model FeedingData {
+  id        String    @id @default(uuid())
+  type      String
+  amount    Float     @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  husbandryDataId String
+  husbandryData   HusbandryData @relation(fields: [husbandryDataId], references: [id], onDelete: Cascade)
+}
+
+model SupplementDosing {
+  id        String    @id @default(uuid())
+  name      String
+  dosage    Float
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  husbandryDataId String
+  husbandryData   HusbandryData @relation(fields: [husbandryDataId], references: [id], onDelete: Cascade)
+}
+
+model Condition {
+  id             String             @id @default(uuid())
+  name           String
+  sensor         SensorType
+  value          Float
+  condition      ConditionValueType
+  recommendation String?
+  message        String
+  type           ConditionType
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime?          @updatedAt
+
+  tankId String
+  tank   Tank   @relation(fields: [tankId], references: [id], onDelete: Cascade)
+}
+
+model RecurringCondition {
+  id               String       @id @default(uuid())
+  name             String
+  intervalType     IntervalType
+  intervalValue    Int
+  endDate          DateTime?
+  endingCount      Int?
+  message          String
+  lastMessageSent  DateTime
+  totalMessageSent Int
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime?    @updatedAt
+
+  tankId String
+  tank   Tank   @relation(fields: [tankId], references: [id], onDelete: Cascade)
+}
+
+model FeedIncreaseCondition {
+  id                    String    @id @default(uuid())
+  name                  String
+  referenceTime         String
+  dailyMessageSentCount Int
+  lastMessageSent       DateTime?
+  expectedFeedAmount    Float     @default(0)
+  totalMessageSent      Int
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime? @updatedAt
+
+  tankId String
+  tank   Tank   @relation(fields: [tankId], references: [id], onDelete: Cascade)
+}
+
+model Todo {
+  id        String    @id @default(uuid())
+  message   String
+  type      TodoType
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  tankId String
+  tank   Tank   @relation(fields: [tankId], references: [id], onDelete: Cascade)
+}
+
+model Record {
+  id                String    @id @default(uuid())
+  startDate         DateTime
+  endDate           DateTime
+  averageBodyWeight Float?
+  shrimpWeight      Float?
+  feedAdded         Float?
+  fcr               Float?
+  estimatedCount    Int?
+  estimatedHarvest  Float?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime? @updatedAt
+
+  tankId String
+  tank   Tank   @relation(fields: [tankId], references: [id], onDelete: Cascade)
+}
+
+model FcmToken {
+  id        String    @id @default(uuid())
+  token     String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum UserStatus {
@@ -72,4 +239,47 @@ enum SocialAccountProvider {
   KAKAO
   GOOGLE
   APPLE
+}
+
+enum SensorType {
+  DO
+  PH
+  NH4
+  NO2
+  ALK
+  WATER_TEMPERATURE
+  BIO_FORMULA_INDEX1
+  BIO_FORMULA_INDEX2
+  BIO_FORMULA_INDEX3
+}
+
+enum ConditionValueType {
+  GTE
+  GT
+  LTE
+  LT
+}
+
+enum ConditionType {
+  ALERT
+  FEEDING
+}
+
+enum IntervalType {
+  DAYS
+  WEEKS
+  MONTHS
+  YEARS
+}
+
+enum TodoType {
+  FEEDING
+  ALERT
+  RECURRING
+  FEEDING_INCREASE
+}
+
+enum UserRole {
+  USER
+  ADMIN
 }
